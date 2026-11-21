@@ -1,0 +1,641 @@
+{
+  "_meta": {
+    "idioma": "es",
+    "fecha_investigacion": "2026-11-21",
+    "aviso": "Contenido de apoyo para seguimiento personal. No sustituye al fisioterapeuta ni al cirujano. Todo texto esta parafraseado de guias publicas. Donde una fuente no da un dato se marca 'a criterio del fisio'.",
+    "convencion_fuentes": "Cada 'fuente' es un codigo corto definido en 'fuentes'. 'NO_GUIAS' = dato de conocimiento clinico general que NO aparece en las guias leidas; debe confirmarlo el equipo medico.",
+    "fases_mapeo": "Las fases de esta app no coinciden 1:1 con ninguna guia. MOON usa 0-5 (fases por semanas aprox.), Melbourne usa pre-op y 1-5 (solo por criterios, sin semanas), Aspetar no define fases numeradas. Las semanas son orientativas y casi siempre vienen de MOON; la progresion real depende de los criterios.",
+    "graft_nota_general": "Ninguna guia define un protocolo distinto completo para isquiotibiales vs tendon rotuliano. Aspetar solo da diferencias puntuales (prensa desde sem. 3 con isquiotibiales) y pide vigilar dolor anterior de rodilla. El resto de diferencias de injerto: a criterio del cirujano y del fisio."
+  },
+  "fuentes": {
+    "ASP2023": {
+      "nombre": "Aspetar Clinical Practice Guideline on rehabilitation after ACLR (Kotsifaki et al., BJSM 2023;57:500-514)",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC11785408",
+      "leida": "texto completo (via PMC, acceso abierto)"
+    },
+    "MOON2015": {
+      "nombre": "MOON ACL Rehabilitation Guidelines (Wright et al., Sports Health 2015;7:239-243 + apendice con las fases)",
+      "url": "https://www.vumc.org/sports-medicine/sites/vumc.org.sports-medicine/files/public_files/documents/MOON%20VSM%20ACL%20Guidelines.pdf",
+      "url_articulo": "https://pmc.ncbi.nlm.nih.gov/articles/PMC4482298",
+      "leida": "PDF de las fases (copia alojada por Vanderbilt) leido completo; el articulo en PMC solo en parte (las fases estan en el apendice)"
+    },
+    "MEL2": {
+      "nombre": "Melbourne ACL Rehabilitation Guide 2.0 (Cooper & Hughes)",
+      "url": "https://omniafisioterapia.com/wp-content/uploads/2023/08/ACL-Guide-Melbourne-Oficial.pdf",
+      "leida": "PDF completo (copia alojada por una clinica, no la web de los autores)"
+    },
+    "NHS_MEL": {
+      "nombre": "St George's NHS - Patient Passport ACLR (basado en Melbourne 2.0)",
+      "url": "https://www.stgeorges.nhs.uk/wp-content/uploads/2025/10/THE_ACL_01.pdf",
+      "leida": "completo; sirve de contraste con Melbourne"
+    },
+    "JOSPT2017": {
+      "nombre": "JOSPT CPG Knee Ligament Sprain, revision 2017 (Logerstedt et al., JOSPT 2017;47(11):A1-A47). OJO: la revision es de 2017, no de 2022",
+      "url": "https://www.orthopt.org/uploads/content_files/files/Knee%20Ligament%20Sprain%20CPG%20-%202017.pdf",
+      "doi": "https://doi.org/10.2519/jospt.2017.0303",
+      "leida": "resumen de recomendaciones y partes del texto"
+    },
+    "DO_5A": {
+      "nombre": "Delaware-Oslo ACL Cohort, resultados a 5 anos y algoritmo de tratamiento (Grindem/Eitzen/Snyder-Mackler et al., JBJS 2021)",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC8376754",
+      "leida": "texto completo (manuscrito en PMC)"
+    },
+    "DO_CONS": {
+      "nombre": "Consenso de criterios de 'resultado exitoso' tras lesion/reconstruccion de LCA (Delaware-Oslo, BJSM 2015)",
+      "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC3900606",
+      "leida": "texto completo"
+    },
+    "KANON2010": {
+      "nombre": "KANON trial, 2 anos (Frobell et al., NEJM 2010;363:331-42)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/20660401/",
+      "leida": "solo resumen (abstract); el protocolo de rehabilitacion detallado no se pudo leer"
+    },
+    "KANON2015": {
+      "nombre": "KANON trial, 5 anos (Frobell et al., BMJ 2013/2015)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/25926596/",
+      "leida": "solo resumen"
+    },
+    "KANON2023": {
+      "nombre": "KANON trial, 11 anos (Treatment for Acute ACL Tear in Young Active Adults, 2023)",
+      "url": "https://pubmed.ncbi.nlm.nih.gov/38320141/",
+      "leida": "solo resumen"
+    },
+    "COPER_FITZ": {
+      "nombre": "Criterios de 'potencial coper' (Fitzgerald et al., KSSTA 2000), citados por revisiones",
+      "url": null,
+      "leida": "NO leida; solo a traves de resumenes de busqueda. Verificar umbrales en el original antes de usarlos"
+    },
+    "KOOS_WEB": {
+      "nombre": "KOOS - web oficial (Roos)",
+      "url": "https://www.koos.nu",
+      "leida": "pagina leida; no detalla items ni puntuacion"
+    },
+    "NO_GUIAS": {
+      "nombre": "Conocimiento clinico general; no extraido de las guias leidas",
+      "url": null,
+      "leida": "n/a"
+    }
+  },
+
+  "fases": [
+    {
+      "id": "prehab",
+      "nombre": "Prehabilitacion (antes de operar)",
+      "semanas_orientativas": "Desde que baja la inflamacion hasta la cirugia. Delaware-Oslo uso 5 semanas (10 sesiones); Aspetar cita estudios de 3-6 semanas. Resolver primero el dolor/derrame.",
+      "objetivos": [
+        "Eliminar o reducir al maximo el derrame (hinchazon).",
+        "Recuperar la extension completa y una flexion cercana a la normal antes de operar.",
+        "Recuperar fuerza de cuadriceps e isquiotibiales hasta cerca del 90 % de la pierna sana (Melbourne).",
+        "Marcha normal y activacion voluntaria del cuadriceps sin 'lag' (MOON, Aspetar).",
+        "Aprender los ejercicios y las normas del postoperatorio, el uso de muletas y el cuidado de la herida (MOON).",
+        "Guardar datos de referencia (saltos, fuerza, cuestionarios) para comparar despues: Melbourne exige saltos postoperatorios >= los datos preoperatorios."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Extension pasiva completa", "medida": "extension_deg", "umbral": "0 grados (Melbourne). MOON: sin deficit de extension, marcha normal.", "fuente": "MEL2"},
+        {"texto": "Flexion", "medida": "flexion_deg", "umbral": "Melbourne: 125 grados o mas (pasiva). MOON: flexion activa 0-120 grados.", "fuente": "MEL2"},
+        {"texto": "Derrame", "medida": "derrame_grado", "umbral": "Melbourne: cero en el stroke test. MOON: 'minimo'.", "fuente": "MEL2"},
+        {"texto": "Elevacion de pierna recta sin lag", "medida": "elevacion_sin_lag", "umbral": "Sin lag (MOON la cita como '20 SLR sin lag'; la cifra exacta del original es ambigua: a criterio del fisio)", "fuente": "MOON2015"},
+        {"texto": "Fuerza de cuadriceps e isquiotibiales", "medida": "lsi_cuadriceps", "umbral": "90 % de la pierna sana (dinamometro manual en Melbourne)", "fuente": "MEL2"},
+        {"texto": "Salto horizontal simple", "medida": "lsi_saltos", "umbral": "LSI 90 % (Melbourne, test opcional como dato de referencia)", "fuente": "MEL2"},
+        {"texto": "Visita previa de verificacion", "medida": "otro", "umbral": "Al menos 1 visita al fisio para comprobar activacion voluntaria y que no hay flexo (contractura en flexion). Los estudios preoperatorios duraron 3-6 semanas.", "fuente": "ASP2023"},
+        {"texto": "Resolucion de deficits agudos antes del bloque de entrenamiento", "medida": "otro", "umbral": "Delaware-Oslo exigia poco o nulo dolor/derrame durante y despues de actividad pliometrica para entrar en el programa", "fuente": "DO_5A"}
+      ],
+      "ejercicios": [
+        {"id": "pre_hielo_elevacion", "nombre": "Hielo y elevacion", "descripcion_breve": "Aplicar frio sobre la rodilla con la pierna elevada para controlar la hinchazon; proteger la piel.", "dosis": "No especificada en la guia prehab; a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "No aplica antes de operar", "fuente": "MEL2"},
+        {"id": "pre_rom", "nombre": "Ejercicios de rango de movimiento", "descripcion_breve": "Estirar la rodilla hasta extension completa (talon apoyado en un cojin, tumbado boca abajo con la pierna colgando) y flexionarla de forma progresiva.", "dosis": "a criterio del fisio (MOON usa para extension 'baja carga, larga duracion', unos 5 min por serie, en el postoperatorio)", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias descritas", "fuente": "MEL2"},
+        {"id": "pre_bici", "nombre": "Bicicleta estatica / aerobico sin impacto", "descripcion_breve": "Actividad aerobica sin impacto para mantener la forma y ayudar al rango de movimiento.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MEL2"},
+        {"id": "pre_fuerza", "nombre": "Fuerza progresiva de pierna", "descripcion_breve": "Programa de fuerza que empieza con peso corporal y pasa a gimnasio (cuadriceps, isquiotibiales, cadera, pantorrilla) a medida que la rodilla lo permite.", "dosis": "Meta: 90 % de fuerza de la pierna sana. Series y repeticiones: a criterio del fisio", "frecuencia": "Delaware-Oslo: 10 sesiones en 5 semanas (2 por semana)", "notas_injerto": "Sin diferencias", "fuente": "MEL2"},
+        {"id": "pre_saltos", "nombre": "Saltos y aterrizajes controlados (solo si no hay dolor ni derrame)", "descripcion_breve": "Cuando la rodilla esta tranquila, introducir ejercicios sencillos de salto y aterrizaje; evitar los cambios de direccion agresivos.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MEL2"}
+      ],
+      "evitar": [
+        "Cambios de direccion agresivos y pivotes antes de operar (Melbourne).",
+        "Operar con la rodilla inflamada, sin extension o muy debil: la guia Melbourne vincula mejores resultados con extension completa, buena fuerza y poco derrame antes de la cirugia.",
+        "Prehab con perturbaciones: Aspetar no encontro beneficio extra de anadirlas al programa preoperatorio."
+      ]
+    },
+    {
+      "id": "f1",
+      "nombre": "Fase 1 - Postoperatorio inmediato",
+      "semanas_orientativas": "0-2 (MOON: desde la cirugia hasta ~2 semanas)",
+      "objetivos": [
+        "Extension completa de rodilla (la guia Melbourne insiste en lograrla en las primeras 2-3 semanas y mantenerla).",
+        "Control del cuadriceps: levantar la pierna estirada sin lag.",
+        "Controlar dolor e hinchazon.",
+        "Marcha normal y retirar las muletas cuando se camine sin cojear y se suba/baje escaleras sin dolor ni inestabilidad (MOON)."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Extension completa", "medida": "extension_deg", "umbral": "0 grados; como minimo, deficit de extension activa <= 5 grados (MOON, criterio para pasar a su fase 2)", "fuente": "MOON2015"},
+        {"texto": "Flexion activa", "medida": "flexion_deg", "umbral": "110 grados (MOON, criterio de salida de su fase 1)", "fuente": "MOON2015"},
+        {"texto": "Elevacion de pierna recta sin lag", "medida": "elevacion_sin_lag", "umbral": "Sin lag (cifra exacta '20' del original ambigua; a criterio del fisio). Melbourne: lag de 0 a 5 grados en el test del cuadriceps sentado", "fuente": "MOON2015"},
+        {"texto": "Marcha normal y fin de las muletas", "medida": "otro", "umbral": "Marcha normal; subir y bajar escaleras de forma alterna sin dolor ni inestabilidad", "fuente": "MOON2015"},
+        {"texto": "Derrame bajo control", "medida": "derrame_grado", "umbral": "Minimo (MOON) / 'leve' (Melbourne)", "fuente": "MOON2015"}
+      ],
+      "ejercicios": [
+        {"id": "f1_hielo", "nombre": "Frio con compresion y elevacion", "descripcion_breve": "Aplicar frio con compresion (envoltura o manguito) y elevar la pierna. Aspetar lo considera justificado en la fase inicial; JOSPT lo recomienda justo tras la cirugia para el dolor.", "dosis": "MOON: primeras 24 h o hasta controlar la inflamacion aguda, 15 min cada hora; despues 3 veces al dia 15 min", "frecuencia": "Segun dosis anterior", "notas_injerto": "Melbourne: tambien hielo sobre la zona donante del injerto", "fuente": "MOON2015"},
+        {"id": "f1_ext_pasiva", "nombre": "Extension pasiva de baja carga y larga duracion", "descripcion_breve": "Dejar que la gravedad estire la rodilla (talon apoyado en alto o tumbado boca abajo con la pierna colgando) sin tensar el muslo.", "dosis": "~5 minutos por serie (MOON); numero de series a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias descritas", "fuente": "MOON2015"},
+        {"id": "f1_flexion", "nombre": "Flexion asistida (deslizar el talon, deslizar por la pared, bici de balanceo)", "descripcion_breve": "Doblar la rodilla de forma progresiva dentro de lo que tolere. Aspetar: iniciar el movimiento activo cuanto antes, respetando las instrucciones del cirujano.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f1_cuad_sets", "nombre": "Contraccion estatica de cuadriceps", "descripcion_breve": "Apretar el muslo con la rodilla estirada, buscando activar bien el vasto interno y externo.", "dosis": "a criterio del fisio", "frecuencia": "Aspetar: puede hacerse en las primeras 2 semanas sin riesgo para el injerto", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f1_slr", "nombre": "Elevacion de pierna recta (SLR)", "descripcion_breve": "Levantar la pierna estirada sin que la rodilla se doble ni se pierda extension (sin lag).", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f1_movilizacion_rotula", "nombre": "Movilizacion de la rotula", "descripcion_breve": "Deslizar suavemente la rotula de lado a lado y luego arriba y abajo, vigilando la reaccion de la hinchazon.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Especialmente util con injerto de tendon rotuliano (inferencia; la guia no lo especifica por injerto)", "fuente": "MOON2015"},
+        {"id": "f1_isquios_cadera", "nombre": "Isquios suaves y ejercicios de cadera", "descripcion_breve": "Contracciones de isquiotibiales, curl de isquios, abduccion/aduccion en decubito lateral, extension de cadera boca abajo, mini sentadillas con dos piernas, elevacion de talones.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Con injerto de isquiotibiales, la carga de isquios en estas primeras semanas la decide el cirujano/fisio (MOON no distingue injerto)", "fuente": "MOON2015"},
+        {"id": "f1_nmes", "nombre": "Electroestimulacion del cuadriceps (NMES)", "descripcion_breve": "Se usa si cuesta activar el cuadriceps. Aspetar la recomienda en la fase muy temprana; JOSPT, junto a ejercicio durante 6-8 semanas (grado A). MOON la deja opcional y la retira al lograr SLR sin lag.", "dosis": "JOSPT: 6 a 8 semanas; parametros a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "JOSPT2017"},
+        {"id": "f1_carga", "nombre": "Apoyo progresivo con muletas", "descripcion_breve": "Caminar con apoyo segun tolerancia desde el primer dia (MOON). Aspetar: primera semana, progresivo y controlado. JOSPT: apoyo precoz dentro de la 1.a semana.", "dosis": "Segun tolerancia y las instrucciones del cirujano", "frecuencia": "diaria", "notas_injerto": "Si hay meniscos o cartilago intervenidos, la carga cambia: seguir al cirujano (Aspetar)", "fuente": "MOON2015"}
+      ],
+      "evitar": [
+        "Maquina de movimiento pasivo continuo (CPM): Aspetar recomienda no usarla (sin beneficio adicional frente al movimiento activo); MOON tampoco.",
+        "Ferula/inmovilizador rutinarios: MOON solo lo usa en las primeras 24 h tras un bloqueo del nervio femoral. Inmovilizar no reduce el dolor y puede atrofiar el musculo (Aspetar).",
+        "Agujas secas en el vasto interno en esta fase: riesgo de hemorragia (Aspetar).",
+        "Ejercicios de cadena abierta mas alla de cuadriceps ligero en arco corto antes de la semana 6 segun MOON (Aspetar permite 90-45 grados desde la semana 4).",
+        "Si hay lesion del ligamento colateral medial grado II-III: evitar aducciones con carga en esta fase (MOON)."
+      ]
+    },
+    {
+      "id": "f2",
+      "nombre": "Fase 2 - Fuerza temprana",
+      "semanas_orientativas": "2-6 (MOON: semanas 2 a 6)",
+      "objetivos": [
+        "Rango de movimiento completo.",
+        "Mejorar la fuerza muscular, sobre todo cuadriceps, con cargas progresivas.",
+        "Empezar el control neuromuscular (equilibrio, estabilidad).",
+        "Mantener el derrame y el dolor en el nivel minimo."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Rango completo (referencia Melbourne)", "medida": "extension_deg", "umbral": "Extension 0 grados / prone hang igual a la pierna sana (Melbourne fase 2)", "fuente": "MEL2"},
+        {"texto": "Flexion", "medida": "flexion_deg", "umbral": "125 grados o mas pasiva (Melbourne, objetivo de fase 1 para pasar a fase 2)", "fuente": "MEL2"},
+        {"texto": "Derrame minimo/cero", "medida": "derrame_grado", "umbral": "MOON: 'minimo'; Melbourne: cero en el stroke test", "fuente": "MEL2"},
+        {"texto": "Elevacion sentado sin lag", "medida": "elevacion_sin_lag", "umbral": "Lag de 0 a 5 grados (test del cuadriceps, Melbourne)", "fuente": "MEL2"},
+        {"texto": "Fuerza funcional y control en actividades diarias", "medida": "otro", "umbral": "Subir/bajar escaleras y caminar con control; MOON no da un porcentaje", "fuente": "MOON2015"},
+        {"texto": "Funcion global percibida (pregunta 10 del IKDC)", "medida": "dolor", "umbral": "Mayor de 7 sobre 10 para pasar a su fase 3 (MOON)", "fuente": "MOON2015"}
+      ],
+      "ejercicios": [
+        {"id": "f2_prensa", "nombre": "Prensa de piernas en rango funcional", "descripcion_breve": "Empujar con ambas piernas en un rango similar a media sentadilla. Aspetar: puede empezar a las 3 semanas con injerto de isquiotibiales.", "dosis": "Rango 0-45 grados (Aspetar). Series, repeticiones y peso: a criterio del fisio", "frecuencia": "Ejercicio de fuerza 2-3 veces por semana (JOSPT, grado A)", "notas_injerto": "Aspetar da la fecha concreta (sem. 3) para isquiotibiales; con rotuliano, a criterio del fisio. Vigilar dolor anterior de rodilla", "fuente": "ASP2023"},
+        {"id": "f2_sentadilla_pared", "nombre": "Mini sentadilla / sentadilla en pared / step-up", "descripcion_breve": "Sentadillas poco profundas y subir a un escalon bajo, controlando la alineacion de la rodilla.", "dosis": "a criterio del fisio", "frecuencia": "2-3 veces por semana (JOSPT)", "notas_injerto": "Sin diferencias descritas", "fuente": "MOON2015"},
+        {"id": "f2_ext_corta", "nombre": "Extension de rodilla en maquina, arco corto", "descripcion_breve": "Ejercicio de cadena abierta de cuadriceps en un arco limitado y con poca carga.", "dosis": "MOON: de 90 a 40 grados de flexion en esta fase. Aspetar: de 90 a 45 grados desde la semana 4. Carga: a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Vigilar dolor anterior de rodilla, mas frecuente con tendon rotuliano (inferencia; Aspetar solo dice vigilar el dolor anterior y ajustar la carga)", "fuente": "ASP2023"},
+        {"id": "f2_excentrico", "nombre": "Cuadriceps excentrico (bici excentrica o stepper)", "descripcion_breve": "Trabajo en el que el cuadriceps frena el movimiento, en rodilla flexionada entre 20 y 60 grados, con ergometro adecuado.", "dosis": "Rango 20-60 grados (Aspetar); cargas a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Aspetar lo permite desde la semana 3 con injerto rotuliano o de isquiotibiales", "fuente": "ASP2023"},
+        {"id": "f2_isquios", "nombre": "Curl de isquiotibiales y SLR con banda", "descripcion_breve": "Fortalecimiento de isquios con maquina o banda elastica.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Con injerto de isquiotibiales: progresion e inicio de curl con resistencia a criterio del cirujano/fisio (MOON no lo diferencia)", "fuente": "MOON2015"},
+        {"id": "f2_pantorrilla_cadera", "nombre": "Elevaciones de talon y cadera", "descripcion_breve": "Elevacion de talones (doble pierna a una pierna), prensa de pantorrilla y trabajo de cadera con maquina multicadera.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f2_neuro", "nombre": "Control neuromuscular: tabla de equilibrio, apoyo monopodal, slide board", "descripcion_breve": "Equilibrio sobre una pierna o superficies inestables, deslizamientos laterales en tabla.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f2_bici_eliptica", "nombre": "Bicicleta, eliptica y stepper", "descripcion_breve": "Aerobico sin impacto; la bici con sillin bajo tambien ayuda a ganar flexion.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f2_acuatico", "nombre": "Terapia en agua", "descripcion_breve": "Ejercicio en piscina para mejorar la funcion subjetiva; Aspetar la propone tras la cicatrizacion completa de la herida (MOON la excluyo por no estar disponible en todos los centros).", "dosis": "a criterio del fisio", "frecuencia": "Iniciar a las 3-4 semanas (Aspetar)", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f2_flujo_sanguineo", "nombre": "Restriccion del flujo sanguineo con carga baja (BFR)", "descripcion_breve": "Trabajar con cargas bajas y un manguito que limita el retorno venoso; opcion si hay dolor o no se toleran cargas altas.", "dosis": "a criterio del fisio", "frecuencia": "Solo en fase temprana, con supervision", "notas_injerto": "Contraindicada en hinchazon extensa, enfermedad cardiovascular, irritacion cutanea, etc. (Aspetar)", "fuente": "ASP2023"}
+      ],
+      "evitar": [
+        "Carga en cadena abierta fuera de los rangos de arriba antes de la semana 4-6 (Aspetar/MOON).",
+        "Subir carga si aumentan dolor o hinchazon: Melbourne usa estos dos signos como senal de que la rodilla no tolera el trabajo.",
+        "Correr, saltar o hacer pivotes (aun no).",
+        "Taping kinesiologico y vibracion de cuerpo entero como solucion: Aspetar no encuentra beneficio claro (taping: efecto probablemente pequeno o nulo; vibracion: sin efecto sobre la fuerza en fases temprana e intermedia)."
+      ]
+    },
+    {
+      "id": "f3",
+      "nombre": "Fase 3 - Fuerza y control",
+      "semanas_orientativas": "7-12 (MOON fase 3). Melbourne no pone semanas: dura hasta cumplir los criterios de su fase 2.",
+      "objetivos": [
+        "Mantener el rango completo.",
+        "Recuperar la mayor parte de la fuerza y del equilibrio sobre una pierna.",
+        "Sentadilla a una pierna con buen control y alineacion.",
+        "Preparar el inicio de la carrera (MOON incluye correr en linea recta en la fase 3)."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Rango completo y sin derrame", "medida": "derrame_grado", "umbral": "Extension 'prone hang' igual a la sana, flexion >= 125 grados, stroke test = cero (Melbourne, requisitos antes de la fase 3)", "fuente": "MEL2"},
+        {"texto": "Fuerza de puente a una pierna, elevaciones de gemelo y plancha lateral", "medida": "lsi_cuadriceps", "umbral": "> 85 % frente a la pierna sana (puente y gemelo: minimo 20 repeticiones; plancha lateral: minimo 30 s)", "fuente": "MEL2"},
+        {"texto": "Levantarse de una silla a una pierna", "medida": "otro", "umbral": "> 85 % y minimo > 10 repeticiones por pierna", "fuente": "MEL2"},
+        {"texto": "Sentadilla a una pierna (20 cm, 5 repeticiones a 2 s) valorada como 'buena'", "medida": "otro", "umbral": "Rating 'good' (equilibrio, tronco y pelvis estables, rodilla sin valgo, bajar al menos 60 grados)", "fuente": "MEL2"},
+        {"texto": "Equilibrio unipodal", "medida": "otro", "umbral": "Ojos abiertos > 43 s; ojos cerrados > 9 s (normas de adultos de 18-39 anos)", "fuente": "MEL2"},
+        {"texto": "Fuerza maxima (opcional, no bloquea)", "medida": "otro", "umbral": "Prensa a una pierna y sentadilla ~1,5 x peso corporal en 1RM (solo si se busca deporte con saltos/pivotes)", "fuente": "MEL2"},
+        {"texto": "Percepcion de funcion (MOON, paso a fase 3)", "medida": "dolor", "umbral": "Pregunta 10 del IKDC mayor de 7 sobre 10", "fuente": "MOON2015"}
+      ],
+      "ejercicios": [
+        {"id": "f3_sentadilla_prensa", "nombre": "Sentadillas, prensa, zancadas y bajar escalones", "descripcion_breve": "Fuerza de piernas con carga progresiva, trabajando con control en una sola pierna cuando se pueda.", "dosis": "a criterio del fisio", "frecuencia": "2-3 veces por semana durante 6-10 meses en total (JOSPT, grado A, ejercicios concentricos y excentricos con y sin carga desde semanas 4-6)", "notas_injerto": "Con rotuliano vigilar dolor anterior; con isquiotibiales, progresar isquios a criterio del cirujano", "fuente": "JOSPT2017"},
+        {"id": "f3_ext_completa", "nombre": "Extension de rodilla en maquina de 90 a 0 grados", "descripcion_breve": "Ya se permite el rango completo de cadena abierta en esta fase.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Vigilar dolor anterior (Aspetar)", "fuente": "MOON2015"},
+        {"id": "f3_abierta_cerrada", "nombre": "Combinar cadena abierta y cerrada", "descripcion_breve": "Aspetar sugiere combinar ambas, junto con trabajo excentrico y concentrico.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias descritas", "fuente": "ASP2023"},
+        {"id": "f3_puente_gemelo", "nombre": "Puente a una pierna, elevacion de gemelo y plancha lateral", "descripcion_breve": "Pruebas y ejercicios de resistencia muscular de cadera, gemelo y tronco.", "dosis": "Test: puente y gemelo hasta fallo (minimo 20); plancha lateral (minimo 30 s)", "frecuencia": "a criterio del fisio", "notas_injerto": "El puente a una pierna carga mucho los isquios: tras injerto de isquiotibiales puede ser limitante (inferencia)", "fuente": "MEL2"},
+        {"id": "f3_neuro_avanzado", "nombre": "Perturbaciones, superficies variadas y equilibrio con movimiento de cabeza", "descripcion_breve": "Equilibrio sobre superficies inestables y con empujones del fisio, para trabajar el control neuromuscular.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f3_core", "nombre": "Estabilidad del tronco (core)", "descripcion_breve": "Aspetar lo considera un complemento util para la funcion.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f3_trote_recto", "nombre": "Carrera en linea recta en cinta o entorno protegido (inicio)", "descripcion_breve": "MOON la incluye en esta fase, sin cortes ni pivotes. Aspetar pone sus condiciones en la fase siguiente.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"}
+      ],
+      "evitar": [
+        "Cortes y pivotes (MOON).",
+        "Subir carga si reaparece derrame o dolor.",
+        "Cambios bruscos de volumen de trabajo excentrico: Melbourne pide descanso y vigilar sobrecarga patelofemoral."
+      ]
+    },
+    {
+      "id": "f4",
+      "nombre": "Fase 4 - Carrera e impacto (inicio de carrera)",
+      "semanas_orientativas": "Aprox. semana 12 en adelante; Aspetar cita 8, 12 o 16 semanas como minimo segun estudios y no hay evidencia de que 12 sea seguro o inseguro",
+      "objetivos": [
+        "Volver a correr con progresion gradual y sin dolor ni derrame.",
+        "Introducir saltos y aterrizajes (primero en dos piernas, despues a una).",
+        "Tecnica de aterrizaje y desaceleracion correcta.",
+        "Construir tolerancia del cartilago y los tejidos al impacto."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Condiciones para empezar a correr (propuesta Aspetar)", "medida": "flexion_deg", "umbral": "Flexion >= 95 % del lado sano; extension completa; sin derrame o solo traza; sin dolor", "fuente": "ASP2023"},
+        {"texto": "Fuerza de cuadriceps para empezar a correr", "medida": "lsi_cuadriceps", "umbral": "LSI > 80 % (Aspetar). Impulso excentrico en salto con contramovimiento > 80 % (necesita plataforma de fuerza, no medible en casa)", "fuente": "ASP2023"},
+        {"texto": "Tiempo minimo", "medida": "tiempo_min_semanas", "umbral": "Aspetar: la mayoria de estudios usa 12 semanas (rango 8-16); combinar tiempo + criterios clinicos y funcionales", "fuente": "ASP2023"},
+        {"texto": "Saltitos repetidos a una pierna ('pogos') sin dolor", "medida": "otro", "umbral": "Sin dolor (Aspetar)", "fuente": "ASP2023"},
+        {"texto": "Correr sin dolor ni hinchazon, saltar sin dolor/hinchazon/fallos (MOON)", "medida": "dolor", "umbral": "Correr, y saltar con las dos y con una pierna sin dolor ni derrame", "fuente": "MOON2015"},
+        {"texto": "Requisitos previos antes de los tests de salto (Melbourne)", "medida": "otro", "umbral": "Rango completo, sin derrame, sentadilla a una pierna 'buena' y sin diferencia entre piernas en puente, gemelo y plancha lateral", "fuente": "MEL2"}
+      ],
+      "ejercicios": [
+        {"id": "f4_acuatico_alterg", "nombre": "Aqua-jogging y carrera en cinta antigravedad (Alter-G), sin dolor", "descripcion_breve": "Preparacion previa a la carrera en suelo, cuando esta disponible.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f4_trote_progresivo", "nombre": "Programa de trote progresivo", "descripcion_breve": "Ir de caminar-trotar a correr continuo aumentando volumen e intensidad poco a poco, con dias de descanso.", "dosis": "Ninguna guia leida da el programa exacto de intervalos: a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MEL2"},
+        {"id": "f4_saltos_basicos", "nombre": "Saltos basicos: tijera, saltos simples y a cajon bajo", "descripcion_breve": "Melbourne propone empezar por saltos de tijera y saltos simples y avanzar a cajones y aterrizajes a una pierna.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MEL2"},
+        {"id": "f4_pogos", "nombre": "Saltos pequenos repetidos a una pierna (pogos)", "descripcion_breve": "Rebotes cortos en el sitio sobre una pierna; el test de tolerancia al impacto antes de correr.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f4_aterrizajes", "nombre": "Tecnica de aterrizaje", "descripcion_breve": "Aterrizar con rodillas alineadas sobre los pies, tronco estable y absorbiendo con cadera y rodilla.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MEL2"},
+        {"id": "f4_fuerza_mant", "nombre": "Mantener fuerza y equilibrio en gimnasio", "descripcion_breve": "Seguir con el entrenamiento de fuerza y control neuromuscular a la vez que se empieza a correr.", "dosis": "a criterio del fisio", "frecuencia": "2-3 veces por semana (JOSPT)", "notas_injerto": "Sin diferencias", "fuente": "JOSPT2017"}
+      ],
+      "evitar": [
+        "Subir a la vez volumen e intensidad de la carrera.",
+        "Correr sin cumplir los criterios (aunque haya pasado el tiempo): para Aspetar el tiempo es necesario pero no suficiente.",
+        "Cortes, pivotes y deporte de contacto aun (MOON: sin cortar ni pivotar antes de su fase 4)."
+      ]
+    },
+    {
+      "id": "f5",
+      "nombre": "Fase 5 - Agilidad y cambios de direccion",
+      "semanas_orientativas": "MOON: semanas 13-16 (agilidad) y 17-20 (deporte). Melbourne la integra en su fase 3, sin semanas.",
+      "objetivos": [
+        "Correr en patrones (ochos, pivotes) a velocidad creciente: MOON pide el 75 % de velocidad sin dificultad.",
+        "Saltos verticales y pliometria sin dolor ni inestabilidad.",
+        "Rendimiento de saltos a una pierna cercano al 95 % (Melbourne) o al 75-85 % (MOON).",
+        "Agilidad: ladder, slalom, lanzaderas, y juego modificado supervisado."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Test de salto simple, triple y triple cruzado", "medida": "lsi_saltos", "umbral": "LSI > 95 % (Melbourne) y >= que los datos preoperatorios. MOON usa 75 % en esta etapa y 85 % para la vuelta al deporte", "fuente": "MEL2"},
+        {"texto": "Test de salto lateral 30 s (side hop)", "medida": "lsi_saltos", "umbral": "> 95 %", "fuente": "MEL2"},
+        {"texto": "Levantarse de silla a una pierna", "medida": "otro", "umbral": "> 22 repeticiones con ambas piernas", "fuente": "MEL2"},
+        {"texto": "Equilibrio dinamico (Star Excursion, 3 direcciones)", "medida": "otro", "umbral": "> 95 % frente al lado sano", "fuente": "MEL2"},
+        {"texto": "Test vestibular (equilibrio a una pierna girando la cabeza) ", "medida": "otro", "umbral": "Aguantar 15 s con giro lateral y 15 s arriba-abajo, sin soltar las manos de la cintura, en ambas piernas", "fuente": "MEL2"},
+        {"texto": "Fuerza maxima (opcional, no bloquea)", "medida": "otro", "umbral": "Prensa a una pierna y sentadilla ~1,8 x peso corporal en 1RM", "fuente": "MEL2"},
+        {"texto": "Salto vertical maximo y ocho a 75 % de velocidad (MOON)", "medida": "otro", "umbral": "Sin dolor ni inestabilidad; funcion global (IKDC pregunta 10) > 8 sobre 10", "fuente": "MOON2015"}
+      ],
+      "ejercicios": [
+        {"id": "f5_agilidad", "nombre": "Circuito de agilidad: slalom, lanzaderas, escalera, carioca, desplazamientos laterales", "descripcion_breve": "Cambios de ritmo y de direccion a velocidad creciente, empezando al 50-75 % de esfuerzo (MOON).", "dosis": "50-75 % de esfuerzo en esta etapa (MOON); resto a criterio del fisio", "frecuencia": "a criterio del fisio; con descanso entre sesiones (carga excentrica elevada)", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f5_pliometria", "nombre": "Pliometria: cajon, saltos a una pierna, aterrizajes con perturbaciones", "descripcion_breve": "Aspetar: pliometria y agilidad mejoran la funcion sin aumentar laxitud ni dolor.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "ASP2023"},
+        {"id": "f5_ocho", "nombre": "Carrera en ocho y pivotes", "descripcion_breve": "Patrones de carrera en figura de ocho y pivotes, al 50-75 % de velocidad.", "dosis": "50-75 % de velocidad (MOON)", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f5_fuerza_alta", "nombre": "Fuerza intensa: sentadilla, zancadas, pliometria", "descripcion_breve": "Fuerza con cargas altas para acercarse al 85-90 % de simetria.", "dosis": "a criterio del fisio", "frecuencia": "2-3 veces por semana (JOSPT)", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f5_deporte_inicial", "nombre": "Gestos deportivos iniciales al 50-75 % de esfuerzo", "descripcion_breve": "Patrones propios del deporte en control, sin oposicion.", "dosis": "50-75 % de esfuerzo (MOON)", "frecuencia": "a criterio del fisio", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f5_prevencion", "nombre": "Programa de prevencion de lesiones (empezar ya)", "descripcion_breve": "Pliometria, equilibrio y fuerza; Melbourne lo exige como parte de los criterios de vuelta al deporte.", "dosis": "Melbourne: minimo 10-15 min antes de cada entrenamiento/partido, continuado", "frecuencia": "Mas de una vez por semana; el programa dura al menos 6 semanas", "notas_injerto": "Sin diferencias", "fuente": "MEL2"}
+      ],
+      "evitar": [
+        "Deporte de oposicion o contacto aun.",
+        "Pasar a velocidad maxima y cambios de direccion bruscos sin cumplir los criterios.",
+        "Atribuirse el alta por sentirse bien: MEL2 insiste en que el ultimo tercio del protocolo es el mas importante."
+      ]
+    },
+    {
+      "id": "f6",
+      "nombre": "Fase 6 - Vuelta al deporte",
+      "semanas_orientativas": "MOON: 17-20 (5-6 meses en su ideal, con evidencia nula antes de 4 meses). Melbourne y NHS: minimo ~9 meses. Aspetar: sin tiempo fijo, criterios y progresion de 'entrenamiento' a 'competicion'.",
+      "objetivos": [
+        "Pasar de entrenamiento restringido a entrenamiento sin restricciones.",
+        "Volver a competir solo cuando haya confianza psicologica.",
+        "Mantener un programa de prevencion indefinido."
+      ],
+      "criterios_para_avanzar": [
+        {"texto": "Rendimiento en saltos", "medida": "lsi_saltos", "umbral": "Melbourne: > 95 % en saltos; MOON: 85 %; Aspetar: > 90 % en salto con contramovimiento y drop jump (plataforma de fuerza). Delaware-Oslo: 90 % en fuerza y saltos", "fuente": "MEL2"},
+        {"texto": "Fuerza de cuadriceps e isquiotibiales", "medida": "lsi_cuadriceps", "umbral": "MOON: 85 %; Delaware-Oslo: >= 90 %; consenso de expertos: > 90 %; Aspetar: 100 % de simetria a 60 grados/s para deportes de pivotes", "fuente": "DO_5A"},
+        {"texto": "Preparacion psicologica", "medida": "otro", "umbral": "Melbourne: ACL-RSI con puntuacion > 90 (media 0-100) en su hoja; confianza y deseo de volver; sin miedo evidente (TSK-11 < 19 en Melbourne)", "fuente": "MEL2"},
+        {"texto": "Funcion global percibida", "medida": "dolor", "umbral": "Pregunta 10 del IKDC > 9 sobre 10 (MOON)", "fuente": "MOON2015"},
+        {"texto": "Tiempo minimo", "medida": "tiempo_min_semanas", "umbral": "Melbourne y NHS: minimo 9 meses (~39 semanas). MOON: referencia de 5-6 meses. Aspetar: sin tiempo fijo, 'necesario pero no suficiente'", "fuente": "MEL2"},
+        {"texto": "Rodilla estable y sin molestias", "medida": "otro", "umbral": "Sin dolor ni derrame, rango completo, sin dolor en tareas deportivas, estable en Lachman/pivot shift (exploracion del cirujano)", "fuente": "ASP2023"},
+        {"texto": "Programa de prevencion en marcha", "medida": "otro", "umbral": "Discutido, implantado y mantenido durante la practica deportiva", "fuente": "MEL2"},
+        {"texto": "Hoja de puntuacion de Melbourne para la vuelta al deporte (MRSS 2.0)", "medida": "otro", "umbral": "> 95 puntos; combina examen clinico, IKDC + ACL-RSI, TSK-11 como requisito, 50 puntos en tests funcionales y 20 en tests con fatiga (ver 'vuelta_al_deporte')", "fuente": "MEL2"}
+      ],
+      "ejercicios": [
+        {"id": "f6_entrenamiento_deporte", "nombre": "Entrenamiento deportivo progresivo, de restringido a libre", "descripcion_breve": "Intervalos, esprints, cambios de direccion, gestos propios del deporte, con analisis tecnico con el equipo. Aspetar: tras el alta clinica, transicion de participacion a rendimiento antes de competir sin restricciones.", "dosis": "a criterio del fisio / equipo", "frecuencia": "a criterio del fisio / equipo", "notas_injerto": "Sin diferencias", "fuente": "MOON2015"},
+        {"id": "f6_prevencion", "nombre": "Programa de prevencion de lesiones del LCA de forma continua", "descripcion_breve": "Pliometria, equilibrio y fuerza antes de cada entrenamiento y partido; Melbourne cita FIFA 11+, PEP, Sportsmetrics, KNEE y FootyFirst.", "dosis": "10-15 minutos por sesion (Melbourne)", "frecuencia": "Antes de cada entrenamiento y partido, de forma indefinida", "notas_injerto": "Sin diferencias", "fuente": "MEL2"},
+        {"id": "f6_fuerza_mant", "nombre": "Mantenimiento de fuerza", "descripcion_breve": "Seguir con fuerza de piernas para no perder las ganancias; JOSPT recoge 6-10 meses de ejercicio terapeutico.", "dosis": "a criterio del fisio", "frecuencia": "2-3 veces por semana (JOSPT)", "notas_injerto": "Sin diferencias", "fuente": "JOSPT2017"}
+      ],
+      "evitar": [
+        "Volver a competir solo por haber pasado el tiempo: Aspetar y Melbourne insisten en criterios objetivos y psicologicos.",
+        "Dejar de hacer el programa de prevencion al recibir el alta."
+      ]
+    }
+  ],
+
+  "variante_sin_cirugia": {
+    "advertencia": "Las fuentes aportan el esquema general y los criterios de seleccion, no un protocolo ejercicio por ejercicio con dosis. El detalle de dosis y progresion: a criterio del fisio. El texto completo del protocolo KANON no se pudo leer; solo su resumen.",
+    "fuentes_usadas": ["DO_5A", "DO_CONS", "KANON2010", "KANON2015", "KANON2023", "COPER_FITZ"],
+    "contexto_evidencia": [
+      "KANON (121 adultos jovenes activos con LCA agudo): rehabilitacion estructurada + cirugia temprana no fue superior a rehabilitacion + cirugia opcional tardia a los 2 anos; de 59 asignados a rehabilitacion, 23 (unos 39 %) acabaron operandose (KANON2010).",
+      "A los 5 anos no hubo diferencias significativas entre grupos (KANON2015). A los 11 anos, el 52 % del grupo de cirugia opcional se habia operado y los resultados siguieron siendo similares (KANON2023).",
+      "Delaware-Oslo (276 deportistas): al llegar a 5 anos, el 64 % se opero pronto, el 11 % tarde y el 25 % siguio solo con rehabilitacion; no hubo diferencias significativas entre resultados de los tres caminos. Los que optaron por rehabilitacion eran mayores, con menos nivel previo de deporte de pivote (DO_5A).",
+      "Aviso: el 34 % de los que eligieron rehabilitacion queria volver a deportes de pivote de nivel I, y 30 de 95 (32 %) acabaron en cirugia tardia (DO_5A). Se recomendaba mas la cirugia en quienes tenian inestabilidad dinamica tras la prehab y querian deportes de pivote."
+    ],
+    "fases": [
+      {
+        "id": "sc1",
+        "nombre": "Resolver los deficits agudos",
+        "semanas_orientativas": "Delaware-Oslo: media de 59 dias desde la lesion hasta resolverlos",
+        "objetivos": ["Controlar dolor y derrame; recuperar rango completo; marcha normal."],
+        "criterios_para_avanzar": [
+          {"texto": "Poco o ningun dolor/derrame durante y tras actividad pliometrica", "medida": "otro", "umbral": "Sin o con minimo dolor/derrame (condicion de entrada de Delaware-Oslo)", "fuente": "DO_5A"}
+        ],
+        "ejercicios": [
+          {"id": "sc1_base", "nombre": "Rango de movimiento, fuerza basica y aerobico sin impacto", "descripcion_breve": "Mismas bases que la prehabilitacion.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "No aplica", "fuente": "MEL2"}
+        ],
+        "evitar": ["Deporte de pivote y cambios de direccion hasta completar el programa."]
+      },
+      {
+        "id": "sc2",
+        "nombre": "Programa neuromuscular y de fuerza progresivo",
+        "semanas_orientativas": "5 semanas, 10 sesiones (Delaware-Oslo)",
+        "objetivos": ["Fuerza, control neuromuscular y pliometria progresivos, supervisados."],
+        "criterios_para_avanzar": [
+          {"texto": "Completar el programa y repetir los tests", "medida": "otro", "umbral": "10 sesiones; despues test funcional y decision compartida con cirujano y fisio", "fuente": "DO_5A"}
+        ],
+        "ejercicios": [
+          {"id": "sc2_nm", "nombre": "Entrenamiento neuromuscular y de fuerza progresivo (Eitzen et al.)", "descripcion_breve": "El detalle de ejercicios y dosis no se pudo leer en las fuentes. A criterio del fisio.", "dosis": "a criterio del fisio", "frecuencia": "10 sesiones en 5 semanas", "notas_injerto": "No aplica", "fuente": "DO_5A"}
+        ],
+        "evitar": ["Considerar la rodilla 'curada' sin hacer el test funcional."]
+      },
+      {
+        "id": "sc3",
+        "nombre": "Decision: seguir sin cirugia o reconstruir",
+        "semanas_orientativas": "Al terminar el programa de 5 semanas",
+        "objetivos": ["Decidir con cirujano y fisio segun funcion, inestabilidad y objetivos deportivos."],
+        "criterios_para_avanzar": [
+          {"texto": "Pruebas de 'potencial coper' (screening)", "medida": "otro", "umbral": "Segun resumenes de busqueda (no se leyo el original): salto cronometrado 6 m >= 80 % LSI, como maximo 1 episodio de fallo (giving way), cuestionario KOS-ADLS >= 80 % y valoracion global >= 60 %. Verificar en Fitzgerald 2000 antes de usarlo", "fuente": "COPER_FITZ"},
+          {"texto": "Inestabilidad dinamica persistente", "medida": "otro", "umbral": "En Delaware-Oslo se recomendaba mas cirugia si hay inestabilidad dinamica tras la prehab o si se quiere volver a deporte de nivel I; se indicaba cirugia tardia en caso de inestabilidad", "fuente": "DO_5A"}
+        ],
+        "ejercicios": [],
+        "evitar": []
+      },
+      {
+        "id": "sc4",
+        "nombre": "Rehabilitacion progresiva (sin cirugia)",
+        "semanas_orientativas": "Delaware-Oslo: se continuaba tipicamente 3-4 meses mas con las mismas fases que el grupo operado",
+        "objetivos": ["Alcanzar y mantener LSI >= 80 % (hitos de rehabilitacion) y despues >= 90 % (vuelta al deporte)."],
+        "criterios_para_avanzar": [
+          {"texto": "Fuerza y saltos", "medida": "lsi_saltos", "umbral": ">= 80 % en la fase de rehabilitacion; >= 90 % para la fase de vuelta al deporte", "fuente": "DO_5A"},
+          {"texto": "Resultados esperados de 'exito' (consenso)", "medida": "otro", "umbral": "Fuerza de cuadriceps e isquios > 90 % del lado sano; sin fallos; derrame no mayor que leve; cuestionarios con umbral 85-90 (IKDC/KOS ~90, KOOS ~85)", "fuente": "DO_CONS"}
+        ],
+        "ejercicios": [
+          {"id": "sc4_prog", "nombre": "Fuerza, pliometria, agilidad y prevencion (mismos bloques que las fases 3-6 operadas)", "descripcion_breve": "Dosis a criterio del fisio.", "dosis": "a criterio del fisio", "frecuencia": "a criterio del fisio", "notas_injerto": "No aplica", "fuente": "DO_5A"}
+        ],
+        "evitar": [
+          "Volver a deporte de pivote con fallos (giving way) o derrame recurrente: se considera fracaso del tratamiento conservador y se plantea la cirugia (DO_5A)."
+        ]
+      }
+    ]
+  },
+
+  "senales_de_alarma": [
+    {"id": "trombosis", "senal": "Dolor, hinchazon, calor o enrojecimiento en la pantorrilla (sobre todo de una sola pierna), con o sin dolor al flexionar el pie.", "accion": "Llamar al cirujano o a urgencias el mismo dia; no masajear la pierna.", "urgencia": "urgente", "fuente": "NO_GUIAS"},
+    {"id": "embolia", "senal": "Falta de aire repentina, dolor en el pecho, tos con sangre o desmayo.", "accion": "Llamar al 112 / urgencias de inmediato.", "urgencia": "emergencia", "fuente": "NO_GUIAS"},
+    {"id": "fiebre", "senal": "Fiebre de 38 grados o mas, escalofrios o malestar general importante en los dias o semanas tras la operacion.", "accion": "Llamar al cirujano el mismo dia; si no responde o empeora, urgencias.", "urgencia": "urgente", "fuente": "NO_GUIAS"},
+    {"id": "herida", "senal": "Herida roja, caliente, con pus, mal olor, que se abre o que supura de forma creciente.", "accion": "Llamar al cirujano el mismo dia. Sospecha de infeccion de herida o articular.", "urgencia": "urgente", "fuente": "NO_GUIAS"},
+    {"id": "derrame_subito", "senal": "Hinchazon grande y repentina de la rodilla, caliente y dolorosa, sobre todo si se asocia a fiebre.", "accion": "Parar el ejercicio; llamar al cirujano el mismo dia. Con fiebre o rodilla muy caliente: urgencias (descartar infeccion articular).", "urgencia": "urgente", "fuente": "NO_GUIAS"},
+    {"id": "bloqueo", "senal": "La rodilla se queda bloqueada y no se estira o no se dobla por completo de forma brusca.", "accion": "Dejar de cargar; contactar con el cirujano en 24-48 h (puede ser menisco o tejido cicatricial).", "urgencia": "pronto", "fuente": "NO_GUIAS"},
+    {"id": "fallo", "senal": "La rodilla 'falla' o se escapa (giving way) durante actividad o en la vida diaria.", "accion": "Parar el ejercicio, avisar al fisio y al cirujano antes de seguir progresando.", "urgencia": "pronto", "fuente": "NO_GUIAS"},
+    {"id": "perdida_extension", "senal": "No se puede estirar del todo la rodilla, o la extension empeora tras haberla logrado.", "accion": "Avisar al fisio y al cirujano pronto; la guia Melbourne subraya mantener la extension.", "urgencia": "pronto", "fuente": "MEL2"},
+    {"id": "dolor_incontrolado", "senal": "Dolor que no cede con la pauta de analgesia indicada o que va a mas con el reposo.", "accion": "Llamar al cirujano.", "urgencia": "pronto", "fuente": "NO_GUIAS"},
+    {"id": "neurovascular", "senal": "Pie frio, palido o azulado, adormecimiento o formigueo persistente, o sangrado que no para.", "accion": "Urgencias.", "urgencia": "emergencia", "fuente": "NO_GUIAS"},
+    {"id": "empeora_con_carga", "senal": "Aumento de dolor o de hinchazon tras subir carga o ejercicio.", "accion": "Volver al nivel anterior y consultar al fisio; Melbourne usa dolor e hinchazon como la senal principal de que la rodilla no tolera la carga.", "urgencia": "ajustar", "fuente": "MEL2"},
+    {"id": "dolor_anterior", "senal": "Dolor en la parte delantera de la rodilla durante ejercicios de cadena abierta o saltos.", "accion": "Ajustar la carga y la progresion, comentarlo con el fisio (Aspetar lo marca como una senal a monitorizar).", "urgencia": "ajustar", "fuente": "ASP2023"},
+    {"id": "conducir", "senal": "Conducir antes de poder frenar con seguridad en una emergencia simulada.", "accion": "Esperar. Aspetar: tipicamente 4-6 semanas con LCA derecho y 2-3 semanas con izquierdo.", "urgencia": "informacion", "fuente": "ASP2023"}
+  ],
+
+  "pruebas_medibles": [
+    {
+      "id": "extension",
+      "nombre": "Extension de rodilla (grados)",
+      "como_medir": "Tumbado boca arriba, pierna relajada, goniometro de brazo largo con los puntos: trocanter mayor, condilo femoral lateral y maleolo lateral (Melbourne). En casa, una app de goniometro del movil puede servir, apoyando el movil sobre la espinilla y calibrando en el suelo; esa variante NO esta validada en las guias. Una alternativa de las guias es la prueba boca abajo (prone hang): tumbado boca abajo con las piernas fuera de la camilla, se compara la diferencia de altura de los talones (aprox. 1 cm = 1 grado).",
+      "unidades": "grados (0 = rodilla recta; deficit de extension = grados que faltan)",
+      "objetivo": "0 grados / igual a la otra pierna",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "flexion",
+      "nombre": "Flexion de rodilla (grados)",
+      "como_medir": "Tumbado boca arriba, deslizar el talon hacia el gluteo hasta el maximo y medir el angulo con goniometro (mismos puntos que en extension). En casa se puede usar el movil de la misma forma que arriba.",
+      "unidades": "grados",
+      "objetivo": "Melbourne: 125 grados o mas (pasiva); MOON: 110 (fase 1) y 120 (preoperatorio, activa); Aspetar: 95 % del otro lado para empezar a correr",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "stroke_test",
+      "nombre": "Prueba de derrame (stroke test modificado)",
+      "como_medir": "Con la rodilla extendida y relajada, deslizar la mano hacia arriba por la cara interna de la rodilla para vaciar el liquido hacia arriba; despues deslizar hacia abajo por la cara externa y mirar la 'ola' que aparece en el lado interno. Referencia: Sturgill 2009, citada por Melbourne.",
+      "escala": {
+        "0": "No aparece ola con el movimiento hacia abajo",
+        "traza": "Pequena ola en el lado interno al bajar la mano",
+        "1+": "Bulto grande en el lado interno al bajar la mano",
+        "2+": "El liquido vuelve al lado interno solo, tras subir la mano",
+        "3+": "Tanto liquido que no se puede desplazar fuera del lado interno"
+      },
+      "objetivo": "Fase 1-2: cero a minimo (Melbourne exige cero antes de los tests de la fase 3); Aspetar: sin derrame o traza para empezar a correr",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "perimetro_muslo",
+      "nombre": "Perimetro del muslo (atrofia)",
+      "como_medir": "Cinta metrica rodeando el muslo a una distancia fija por encima del borde superior de la rotula, siempre la misma en las dos piernas y en cada medicion.",
+      "unidades": "cm; comparar con la pierna sana",
+      "objetivo": "Ninguna de las guias leidas da un umbral. Aspetar solo indica que, en los estudios, la atrofia se midio mas de 7,5 cm por encima de la rotula y la hinchazon a la altura del centro de la rotula, para poder comparar. Interpretacion: a criterio del fisio",
+      "fuente": "ASP2023"
+    },
+    {
+      "id": "slr_lag",
+      "nombre": "Elevacion de pierna recta sin lag / test del cuadriceps sentado",
+      "como_medir": "SLR: tumbado, levantar la pierna estirada sin que la rodilla se doble. Variante de Melbourne: sentado en el borde de la camilla, otra persona lleva la rodilla a la extension completa y la suelta; se mide cuanto se cae (lag).",
+      "unidades": "grados de lag",
+      "objetivo": "Sin lag; Melbourne acepta 0-5 grados",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "dolor",
+      "nombre": "Dolor (0-10)",
+      "como_medir": "Escala numerica de 0 (sin dolor) a 10 (maximo imaginable): en reposo, en el mejor y peor momento de las ultimas 24 h y al hacer la actividad que mas molesta (JOSPT lo propone como medida de deficit).",
+      "unidades": "0-10",
+      "objetivo": "Sin dolor o minimo al progresar de fase; para correr, saltar y entrenar: sin dolor",
+      "fuente": "JOSPT2017"
+    },
+    {
+      "id": "funcion_global_10",
+      "nombre": "Funcion global de la rodilla (pregunta 10 del IKDC, 0-10)",
+      "como_medir": "Una sola pregunta: del 0 (no puedo hacer ninguna actividad diaria) al 10 (funcion normal).",
+      "unidades": "0-10",
+      "objetivo": "MOON: > 7 para pasar a fase 3, > 8 para pasar a fase 5, > 9 para volver al deporte",
+      "fuente": "MOON2015",
+      "nota_licencia": "El texto de esta pregunta aparece en la guia MOON, pero el cuestionario IKDC tiene su propia licencia: en la app, usar la formulacion propia ('del 0 al 10, como de normal funciona tu rodilla hoy')."
+    },
+    {
+      "id": "salto_simple",
+      "nombre": "Salto horizontal a una pierna (single hop for distance)",
+      "como_medir": "Con una cinta metrica fija en el suelo: sobre una sola pierna, saltar lo mas lejos posible y caer sobre la misma pierna; medir de la punta en el despegue al talon en la caida. Dos intentos validos y se toma la media. Los brazos pueden moverse.",
+      "unidades": "cm; LSI = distancia pierna operada / pierna sana x 100",
+      "objetivo": "Prehab 90 % (referencia); MOON 75 % -> 85 %; Melbourne > 95 %; Aspetar-Delaware-Oslo >= 90 % para volver",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "salto_triple",
+      "nombre": "Salto triple a una pierna (triple hop)",
+      "como_medir": "Tres saltos consecutivos hacia delante con la misma pierna; se mide la distancia total. Dos intentos validos, media.",
+      "unidades": "cm; LSI = operada / sana x 100",
+      "objetivo": "Mismos umbrales que el salto simple (ver arriba)",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "salto_cruzado",
+      "nombre": "Salto triple cruzado (crossover hop)",
+      "como_medir": "En una linea de 15 cm de ancho y 6 m de largo, tres saltos seguidos con la misma pierna cruzando la linea de interior a exterior a interior. Se mide la distancia total. Dos intentos validos, media.",
+      "unidades": "cm; LSI = operada / sana x 100",
+      "objetivo": "Mismos umbrales que el salto simple (ver arriba)",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "salto_6m",
+      "nombre": "Salto cronometrado de 6 m (6 m timed hop)",
+      "como_medir": "Saltar 6 metros sobre una pierna lo mas rapido posible; cronometrar. Comprobar las dos piernas (MOON y JOSPT lo incluyen en los tests de Cincinnati).",
+      "unidades": "segundos. Atencion: aqui un tiempo MENOR es mejor, asi que el LSI se calcula al reves: tiempo de la pierna sana / tiempo de la operada x 100 (convencion habitual, no explicitada en las fuentes leidas)",
+      "objetivo": "Mismos umbrales que los otros saltos; en el cribado de coper, >= 80 %",
+      "fuente": "MOON2015"
+    },
+    {
+      "id": "salto_lateral",
+      "nombre": "Salto lateral de 30 segundos (side hop)",
+      "como_medir": "Sobre una pierna, con las manos detras de la espalda, saltar de lado a lado entre dos cintas separadas 40 cm durante 30 s; contar los saltos validos sin tocar la cinta.",
+      "unidades": "numero de saltos; LSI = operada / sana x 100",
+      "objetivo": "> 95 % (Melbourne)",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "lsi_formula",
+      "nombre": "Calculo del LSI (indice de simetria de extremidades)",
+      "como_medir": "LSI = (valor de la pierna operada / valor de la pierna sana) x 100. Para medidas donde menos es mejor (tiempo en el salto de 6 m), invertir la division.",
+      "unidades": "%",
+      "objetivo": "Umbrales por fase en los criterios; resumen: >= 80 % para empezar a correr (Aspetar) y para hitos de rehabilitacion (Delaware-Oslo), 85 % MOON, > 90 % Aspetar/Delaware-Oslo/consenso, > 95 % Melbourne",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "fuerza_cuadriceps",
+      "nombre": "Fuerza de cuadriceps e isquiotibiales (dinamometro)",
+      "como_medir": "Sentado con cadera y rodilla a 90 grados, dinamometro de mano sobre la cara anterior (cuadriceps) o posterior (isquios) de la espinilla, por encima del tobillo. Requiere un dinamometro y a un ayudante, no es medible sin material.",
+      "unidades": "kg o N; LSI",
+      "objetivo": "Prehab 90 %; Aspetar > 80 % para correr y 100 % isocinetico a 60 grados/s para deportes de pivote; Delaware-Oslo >= 90 %",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "sentadilla_unipodal",
+      "nombre": "Sentadilla a una pierna (calidad del movimiento)",
+      "como_medir": "De pie sobre una pierna en un cajon de 20 cm con los brazos cruzados, 5 sentadillas lentas (2 s cada una); un ayudante o un video valora: equilibrio, movimiento suave, bajar al menos 60 grados, tronco y pelvis sin movimiento, sin colapso de la rodilla hacia dentro.",
+      "unidades": "bueno / aceptable / malo",
+      "objetivo": "'Bueno' antes de pasar a los tests de la fase 3 (Melbourne)",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "resistencia_muscular",
+      "nombre": "Resistencia muscular: puente a una pierna, gemelo, plancha lateral, levantarse de la silla",
+      "como_medir": "Puente a una pierna (talon sobre cajon de 60 cm, a repeticiones hasta fallo), elevaciones de gemelo en escalon (1 rep cada 2 s), plancha lateral (segundos), levantarse de una silla sobre una pierna (repeticiones). Todo hasta fallo.",
+      "unidades": "repeticiones o segundos; LSI",
+      "objetivo": "> 85 % y minimos de 20/20/30 s/10 reps (Melbourne fase 2); > 22 reps de la silla en la fase 3",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "equilibrio_unipodal",
+      "nombre": "Equilibrio a una pierna (ojos abiertos / cerrados / con cabeza en movimiento)",
+      "como_medir": "De pie sobre una pierna con los brazos cruzados; cronometrar hasta que se descruzan los brazos, se apoya el pie elevado, se mueve el pie de apoyo o se llegue a 45 s. Version con ojos cerrados y con giro de cabeza a 60 pulsaciones/min.",
+      "unidades": "segundos",
+      "objetivo": "Ojos abiertos > 43 s; cerrados > 9 s (adultos 18-39 anos); con la cabeza: 15 s sin soltar las manos de la cintura",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "star_excursion",
+      "nombre": "Star excursion balance test (SEBT)",
+      "como_medir": "De pie sobre una pierna, alcanzar con la otra lo mas lejos posible en tres direcciones (anterior, posterolateral, posteromedial); se suman las tres distancias de cada pierna.",
+      "unidades": "cm; LSI",
+      "objetivo": "> 95 % (Melbourne, fase 3)",
+      "fuente": "MEL2"
+    }
+  ],
+
+  "cuestionarios": [
+    {
+      "id": "acl_rsi",
+      "nombre": "ACL-RSI (Anterior Cruciate Ligament - Return to Sport after Injury scale)",
+      "autores": "Webster, Feller y Lambros, Physical Therapy in Sport 2008",
+      "items": 12,
+      "escala": "Cada item se contesta de 0 a 100 en pasos de 10 (escala visual); se calcula la media de los 12 items (0-100). Mas puntuacion = mas preparacion psicologica. Tres dominios: emociones, confianza y valoracion del riesgo.",
+      "interpretacion": "Referencias de uso (de resumenes de revision, no leidas de fuente primaria): en el rango de 42 a 65 segun estudio; <56 a los 4 meses senala riesgo de no volver al deporte previo. Melbourne puntua 10/10 si el ACL-RSI supera el 90 %, y 0 si no. Aspetar y Melbourne lo usan junto con el IKDC como criterio de alta.",
+      "uso_libre": "NO CONFIRMADO. El autor mantiene la propiedad intelectual. No se encontro una licencia de uso libre. La guia Melbourne reproduce los items completos, lo que no equivale a licencia para copiarlos. Existe una version en espanol validada (traduccion y adaptacion transcultural, con Webster como coautora). Antes de incluir el texto de los items en la app: pedir permiso al autor. Mientras, la app puede enlazar a la web de la escala o redactar preguntas propias NO identicas.",
+      "fuente": "MEL2",
+      "otras_fuentes": ["JOSPT2017"]
+    },
+    {
+      "id": "ikdc_subjetivo",
+      "nombre": "IKDC 2000 Subjective Knee Evaluation Form",
+      "items": 18,
+      "escala": "Puntuacion total de 0 a 100 (mas = mejor funcion y menos sintomas); la formula publicada es una suma de items normalizada al maximo posible (Irrgang et al.). Las instrucciones oficiales de puntuacion son del IKDC/AOSSM; los detalles no se leyeron en este trabajo.",
+      "interpretacion": "Consenso Delaware-Oslo: umbral de 'exito' ~90 (IKDC y KOS); Melbourne divide el IKDC entre 10 para obtener hasta 10 puntos de su hoja de vuelta al deporte. JOSPT recomienda usar IKDC o KOOS antes y despues de la intervencion.",
+      "uso_libre": "Descarga gratuita desde el sitio de la AOSSM segun una busqueda; condiciones de reproduccion y de traduccion: no confirmadas. Existe version espanola validada (Cirugia y Cirujanos 2025). Antes de incluir los items en la app, comprobar los terminos de la AOSSM.",
+      "fuente": "JOSPT2017",
+      "otras_fuentes": ["MEL2", "DO_CONS"]
+    },
+    {
+      "id": "koos",
+      "nombre": "KOOS (Knee injury and Osteoarthritis Outcome Score)",
+      "items": "42 (conocimiento general; la pagina oficial leida no lo detalla)",
+      "escala": "Cinco subescalas (dolor, sintomas, actividades de la vida diaria, deporte/recreacion y calidad de vida), cada una de 0 a 100. No se suman en una sola puntuacion (conocimiento general; la pagina oficial leida no lo detalla).",
+      "interpretacion": "Consenso Delaware-Oslo: umbral de exito ~85. KANON usa KOOS4 (dolor, sintomas, deporte/recreacion, calidad de vida) como resultado principal.",
+      "uso_libre": "NO libre. La web oficial dice que tiene copyright internacional y 'no usar sin permiso'; el permiso se solicita (gratuito de pedir) a traves de Mapi Research Trust (ePROVIDE): https://eprovide.mapi-trust.org/instruments/knee-injury-and-osteoarthritis-outcome-score . Para usuarios academicos es gratuito pero con permiso; cuota para uso comercial.",
+      "fuente": "KOOS_WEB",
+      "otras_fuentes": ["DO_CONS", "KANON2010"]
+    },
+    {
+      "id": "tsk11",
+      "nombre": "Tampa Scale of Kinesiophobia (TSK-11)",
+      "items": 11,
+      "escala": "Melbourne lo usa como criterio de paso/fallo en la vuelta al deporte: 19 o mas = fallo; 11 a 18 = pasa.",
+      "interpretacion": "Aspetar lo cita como cuestionario de miedo a moverse.",
+      "uso_libre": "No comprobado.",
+      "fuente": "MEL2"
+    },
+    {
+      "id": "tegner_marx",
+      "nombre": "Tegner o Marx Activity Rating Scale (nivel de actividad)",
+      "items": "Tegner: 1 item (0-10). Marx: 4 items (conocimiento general).",
+      "escala": "JOSPT recomienda uno de los dos para medir el nivel de actividad antes y despues.",
+      "uso_libre": "No comprobado.",
+      "fuente": "JOSPT2017"
+    }
+  ],
+
+  "vuelta_al_deporte": {
+    "resumen": "Ninguna guia fija un unico criterio. El tiempo es necesario pero no suficiente (Aspetar); Melbourne y el NHS sugieren al menos 9 meses; MOON describe una preparacion tipica a los 5-6 meses y dice que no hay evidencia a favor de volver antes de 4 meses. Aspetar subraya que alta clinica no es lo mismo que competir sin restricciones.",
+    "tiempo_minimo": [
+      {"criterio": "Minimo 9 meses desde la cirugia", "fuente": "MEL2"},
+      {"criterio": "MOON: lo habitual es estar listo a los 5-6 meses; sin evidencia a favor de antes de 4 meses", "fuente": "MOON2015"},
+      {"criterio": "Aspetar: sin tiempo fijo; el tiempo debe ser 'necesario pero no suficiente' y respetar el minimo de cicatrizacion del injerto", "fuente": "ASP2023"}
+    ],
+    "criterios_fuerza_saltos": [
+      {"criterio": "Saltos a una pierna: > 95 % (simple, triple, triple cruzado, lateral), y >= datos preoperatorios", "fuente": "MEL2"},
+      {"criterio": "Saltos a una pierna: 85 % (MOON); en MOON tambien fuerza isocinetica a 60 grados/s al 85 %", "fuente": "MOON2015"},
+      {"criterio": "Fuerza y saltos: LSI >= 90 % para volver al deporte (Delaware-Oslo)", "fuente": "DO_5A"},
+      {"criterio": "Consenso: fuerza de cuadriceps e isquios > 90 % del lado sano, sin fallos, derrame no mayor que leve", "fuente": "DO_CONS"},
+      {"criterio": "Aspetar (alta de deportistas profesionales): isocinetico cuadriceps e isquios 100 % de simetria a 60 grados/s para deportes de pivote; salto con contramovimiento y drop jump > 90 % de simetria; RSI > 1,3 (dos piernas) y 0,5 (una pierna) en deportes de campo; mecanica de salto y de carrera normalizada (> 90 % simetria de fuerzas verticales)", "fuente": "ASP2023"}
+    ],
+    "criterios_clinicos": [
+      {"criterio": "Sin dolor ni derrame; rango completo; rodilla estable en la exploracion (Lachman, pivot shift, laxitud instrumental)", "fuente": "ASP2023"},
+      {"criterio": "Sin quejas funcionales; confianza al correr, cortar y saltar a velocidad completa (MOON)", "fuente": "MOON2015"},
+      {"criterio": "Valoracion global de la funcion (IKDC pregunta 10) > 9 sobre 10 (MOON)", "fuente": "MOON2015"},
+      {"criterio": "Completar un programa de entrenamiento especifico del deporte", "fuente": "ASP2023"}
+    ],
+    "criterios_psicologicos": [
+      {"criterio": "Melbourne: ACL-RSI > 90 en su hoja de puntuacion y confianza/deseo de volver (con IKDC); TSK-11 por debajo de 19", "fuente": "MEL2"},
+      {"criterio": "Aspetar: normalizar la funcion subjetiva y la preparacion psicologica (IKDC, ACL-RSI, TSK)", "fuente": "ASP2023"}
+    ],
+    "puntuacion_melbourne": {
+      "nombre": "Melbourne Return to Sport Score 2.0 (MRSS 2.0)",
+      "estructura": "Examen clinico (10 puntos); IKDC + ACL-RSI (20 puntos); TSK-11 (requisito de paso/fallo); pruebas funcionales (50 puntos); evaluacion de la forma general (requisito); pruebas funcionales con fatiga (20 puntos). Se recomienda hacerlo en dos sesiones separadas al menos 3 dias.",
+      "umbral": "> 95 puntos",
+      "fuente": "MEL2"
+    },
+    "prevencion": "Programa de prevencion de lesiones del LCA continuado mientras se practique deporte, al menos 10-15 min antes de cada entrenamiento y partido (Melbourne).",
+    "advertencia_evidencia": "Aspetar: no esta claro que aprobar una bateria de pruebas reduzca la probabilidad de segunda lesion; los criterios no estan plenamente validados. JOSPT: entre los estudios revisados el LSI de fuerza se uso entre 70 % y 90 % como criterio y no esta claro que predice el retorno.",
+    "fuente": "ASP2023"
+  }
+}

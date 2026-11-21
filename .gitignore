@@ -1,0 +1,13 @@
+# Datos personales: nunca al repositorio
+datos/
+*.json.bak
+mi-rodilla-*.json
+
+# Sistema
+__pycache__/
+*.pyc
+Thumbs.db
+desktop.ini
+
+# Dossier sobre la app comercial: solo en local
+investigacion/complete-acl*.md
