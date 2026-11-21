@@ -1,5 +1,5 @@
 'use strict';
-/* Mi rodilla: seguimiento de la rehabilitación del LCA.
+/* Rochilla: seguimiento de la rehabilitación del LCA.
    Todo se guarda en este dispositivo (localStorage + IndexedDB para las fotos). */
 
 const P = window.PROTOCOLO;
@@ -595,7 +595,7 @@ VISTAS.sesion = () => {
   const seg = `<div class="seg">${[['rehab', 'Rehabilitación'], ['fuerza', 'Resto del cuerpo']].map(([v, t]) => `<button data-accion="seg-sesion" data-v="${v}" class="${tipo === v ? 'activo' : ''}">${t}</button>`).join('')}</div>`;
   if (tipo === 'fuerza') {
     const g = P.fuerzaGeneral; const obj = objetivo(g);
-    return `<div class="pila">${seg}
+    return `<div class="pila"><div class="saludo"><h1>Sesión</h1></div>${seg}
       <div class="card"><h2>${esc(g.nombre)}</h2><p class="sub" style="margin-top:4px">${esc(g.nota || '')}</p><p class="sub" style="margin-top:6px">Esta semana: ${sesionesSemana('fuerza')} de ${obj.n}</p></div>
       ${listaEjercicios(g.ejercicios, false)}
       <button class="btn ancho" data-accion="empezar-sesion" data-tipo="fuerza">${S.sesionActual?.tipo === 'fuerza' ? 'Seguir la sesión' : 'Empezar sesión'}</button>
@@ -607,7 +607,7 @@ VISTAS.sesion = () => {
   if (menisco()) notas.push(`<div class="nota injerto"><b>Menisco tocado:</b> ${esc(P.notas?.meniscoRoto || '')}</div>`);
   if (tiene('menisco_reparado')) notas.push(`<div class="nota injerto"><b>Menisco cosido:</b> ${esc(P.notas?.meniscoReparado || 'tu cirujano suele limitar la flexión y la carga las primeras semanas. Manda su pauta sobre la de la app.')}</div>`);
   if (S.perfil.ligamento !== 'lca') notas.push(`<div class="nota injerto">Programa pensado para el cruzado anterior: confirma cada ejercicio con tu fisio.</div>`);
-  return `<div class="pila">${seg}
+  return `<div class="pila"><div class="saludo"><h1>Sesión</h1></div>${seg}
     <div class="card">
       <div class="fila entre"><div><p class="sub">${esc(f.nombre)}</p><h2>Sesión de hoy</h2></div><span class="chip acento">${hechas}/${obj.n} ${obj.periodo === 'hoy' ? 'hoy' : 'esta semana'}</span></div>
       ${f.frecuencia ? `<p class="sub" style="margin-top:6px">${esc(f.frecuencia)}</p>` : ''}
@@ -643,7 +643,7 @@ VISTAS.guiada = () => {
   const series = e.series || 1, hechas = sa.hechas[e.id] || 0;
   const notas = notasEjercicio(e);
   return `<div class="pila guiada">
-    <div class="cab"><span>Ejercicio ${sa.idx + 1} de ${lista.length}</span><button class="enlace" data-accion="salir-guiada">Salir</button></div>
+    <div class="cab"><span>Ejercicio ${sa.idx + 1} de ${lista.length}</span><span>${sa.tipo === 'fuerza' ? 'Resto del cuerpo' : 'Rehabilitación'}</span></div>
     <div class="barra"><i style="width:${((sa.idx) / lista.length) * 100}%"></i></div>
     <div class="card pila">
       <h1>${esc(e.nombre)}</h1>
@@ -696,7 +696,7 @@ const SUB_PROG = [['resumen', 'Resumen'], ['movilidad', 'Movilidad'], ['hinchazo
 VISTAS.progreso = (sub = 'resumen') => {
   if (!SUB_PROG.some(([v]) => v === sub)) sub = 'resumen';
   const seg = `<div class="seg">${SUB_PROG.map(([v, t]) => `<button data-ir="progreso-${v}" class="${sub === v ? 'activo' : ''}">${t}</button>`).join('')}</div>`;
-  return `<div class="pila">${seg}${PROG[sub]()}</div>`;
+  return `<div class="pila"><div class="saludo"><h1>Progreso</h1></div>${seg}${PROG[sub]()}</div>`;
 };
 const PROG = {};
 PROG.resumen = () => {
@@ -845,7 +845,7 @@ VISTAS.aprender = () => {
 VISTAS.articulo = id => {
   const a = ARTICULOS.find(x => x.id === id); if (!a) return '<div class="vacio">No encontrado</div>';
   if (!S.leidos[a.id]) { S.leidos[a.id] = hoyISO(); guardar(); }
-  return `<div class="pila articulo"><button class="enlace" data-ir="aprender" style="align-self:flex-start">‹ Aprender</button><h1>${esc(a.titulo)}</h1><div class="card">${md(a.texto)}${fuenteTxt(a.fuentes)}</div></div>`;
+  return `<div class="pila articulo"><h1>${esc(a.titulo)}</h1><div class="card">${md(a.texto)}${fuenteTxt(a.fuentes)}</div></div>`;
 };
 VISTAS.alarma = () => `<div class="pila">
   <div class="saludo"><h1>Señales de alarma</h1><p>Si tienes alguna de estas, no esperes a la próxima cita.</p></div>
@@ -869,7 +869,7 @@ VISTAS.ajustes = () => {
       <div class="fila" style="flex-wrap:wrap"><button class="btn peq" data-accion="exportar">Guardar copia</button><button class="btn borde peq" data-accion="exportar" data-fotos="1">Copia con fotos</button><label class="btn borde peq" style="cursor:pointer">Recuperar copia<input type="file" accept="application/json,.json" id="importar-input" hidden></label></div></div>
     <div class="card pulsable" data-ir="informe"><div class="fila entre"><div><h3>Informe para tu fisio</h3><p class="sub">Resumen para enseñar en consulta o guardar en PDF</p></div><span>›</span></div></div>
     <div class="card pila"><h3>Borrar todo</h3><p class="sub">Elimina todos tus datos de este dispositivo.</p><button class="btn peligro peq" data-accion="borrar-todo" style="align-self:flex-start">Borrar todos los datos</button></div>
-    <p class="sub" style="text-align:center">Mi rodilla · hecha a medida, sin cuotas. No sustituye a tu equipo médico.</p>
+    <p class="sub" style="text-align:center">Rochilla · hecha a medida, sin cuotas. No sustituye a tu equipo médico.</p>
   </div>`;
 };
 
@@ -882,8 +882,8 @@ VISTAS.informe = () => {
   const dolSes = media(ses14.map(s => s.dolor).filter(x => x != null));
   const movs = [...S.movilidad].reverse().slice(0, 8);
   return `<div class="pila informe">
-    <div class="fila entre no-imprimir"><button class="enlace" data-ir="progreso">‹ Volver</button><div class="fila"><button class="btn peq borde" data-accion="compartir-informe">Compartir</button><button class="btn peq" data-accion="imprimir">Imprimir o PDF</button></div></div>
-    <div class="card"><h1>Informe de rehabilitación</h1><p class="sub">${esc(p.nombre || '')} · ${fLarga(h)}</p>
+    <div class="fila no-imprimir" style="justify-content:flex-end"><button class="btn peq borde" data-accion="compartir-informe">Compartir</button><button class="btn peq" data-accion="imprimir">Imprimir o PDF</button></div>
+    <div class="card"><h1>Informe de rehabilitación</h1><p class="sub">${p.nombre ? esc(p.nombre) + ' · ' : ''}${fLarga(h)} · Rochilla</p>
       <table class="tabla" style="margin-top:10px"><tbody>
         <tr><td>Lesión</td><td>${esc(TXT.ligamento[p.ligamento])}, rodilla ${esc(p.rodilla || '')}${(p.extras || []).length ? ' + ' + p.extras.map(x => TXT.extras[x].toLowerCase()).join(', ') : ''}</td></tr>
         <tr><td>Situación</td><td>${esc(TXT.situacion[p.situacion])}${p.fechaOperacion ? ' · operación ' + fLarga(p.fechaOperacion) : ''}${p.situacion !== 'conservador' && p.injerto ? ' · injerto: ' + TXT.injerto[p.injerto].toLowerCase() : ''}</td></tr>
@@ -911,7 +911,7 @@ VISTAS.informe = () => {
 function textoInforme() {
   const p = S.perfil, f = faseActual(), ext = ultimaMov('ext'), flex = ultimaMov('flex'), der = ultimo(S.derrame);
   const ck7 = S.checkins.filter(c => c.fecha >= sumarDias(hoyISO(), -7));
-  return [`Rehabilitación de ${p.nombre || ''} (${fLarga(hoyISO())})`, etiquetaTiempo(), `Fase: ${f.nombre}`,
+  return [`Rochilla · rehabilitación${p.nombre ? ' de ' + p.nombre : ''} (${fLarga(hoyISO())})`, etiquetaTiempo(), `Fase: ${f.nombre}`,
     `Extensión: ${ext ? fmtExt(ext.ext) : '—'} · Flexión: ${flex ? fmt(flex.flex) + '°' : '—'}`,
     `Derrame: ${der ? GRADO_TXT[der.grado] : '—'}`,
     `Dolor medio 7 días (al moverse): ${fmt(media(ck7.map(c => c.dolorActividad)), 1)}/10`,
@@ -919,13 +919,73 @@ function textoInforme() {
 }
 
 /* ---------- Hojas (formularios) ---------- */
+/* Como en Bloom OS: la hoja sube con curva de cajón, el fondo queda inerte (no se toca ni se mueve), el foco entra
+   en la hoja sin abrir el teclado, y al cerrarla baja deslizando y el foco vuelve a donde estaba. */
+const sinMovimiento = () => !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+let cierreHojaT = null, entradaHojaT = null, focoAntesHoja = null;
 function abrirHoja(html) {
-  const h = $('#hoja'); h.innerHTML = `<div class="panel" role="dialog" aria-modal="true"><div class="asa"></div>${html}</div>`;
-  h.hidden = false; document.body.style.overflow = 'hidden';
+  const h = $('#hoja');
+  const cambiaContenido = !h.hidden && !h.classList.contains('saliendo');
+  if (h.hidden || h.classList.contains('saliendo')) focoAntesHoja = document.activeElement;
+  clearTimeout(cierreHojaT); cierreHojaT = null; h.classList.remove('saliendo');
+  h.innerHTML = `<div class="panel" role="dialog" aria-modal="true" tabindex="-1"><div class="asa" aria-hidden="true"></div>${html}</div>`;
+  const panel = $('.panel', h);
+  if (cambiaContenido) panel.style.animation = 'none';
+  const t = $('h2', panel); if (t) { t.id = 'hoja-titulo'; panel.setAttribute('aria-labelledby', 'hoja-titulo'); }
+  h.hidden = false; $('#app').inert = true;
+  /* Mientras sube no recoge toques: el segundo toque de un doble toque no cierra la hoja ni pulsa nada de dentro */
+  if (!cambiaContenido) { h.classList.add('entrando'); clearTimeout(entradaHojaT); entradaHojaT = setTimeout(() => h.classList.remove('entrando'), 320); }
+  arrastrarParaCerrar(panel, [$('.asa', panel), $('.cab-panel', panel)].filter(Boolean));
+  try { panel.focus({ preventScroll: true }); } catch (e) { /* sin foco */ }
+}
+function quitarHoja() {
+  clearTimeout(cierreHojaT); cierreHojaT = null;
+  const h = $('#hoja'); h.hidden = true; h.innerHTML = ''; h.classList.remove('saliendo', 'entrando');
 }
 function cerrarHoja() {
-  const h = $('#hoja'); h.hidden = true; h.innerHTML = ''; document.body.style.overflow = ''; pararGonio();
+  pararGonio();
   if (resolverConfirmar) { const r = resolverConfirmar; resolverConfirmar = null; r(false); }
+  const h = $('#hoja');
+  if (h.hidden || h.classList.contains('saliendo')) return;
+  h.classList.add('saliendo'); $('#app').inert = false;
+  const antes = focoAntesHoja; focoAntesHoja = null;
+  if (antes?.isConnected && antes.focus) { try { antes.focus({ preventScroll: true }); } catch (e) { /* sin foco */ } }
+  const panel = $('.panel', h);
+  if (!panel || sinMovimiento() || document.hidden) return quitarHoja();
+  panel.style.animation = 'none';
+  panel.style.transition = 'transform 0.26s var(--ease-sheet)';
+  void panel.offsetHeight;   /* parte de donde esté, también si viene de un arrastre */
+  panel.style.transform = 'translateY(calc(100% + 24px))';
+  cierreHojaT = setTimeout(quitarHoja, 280);
+}
+/* Bajar la hoja con el dedo (o el ratón) desde el asa o su cabecera: sigue al dedo, se resiste hacia arriba,
+   y se cierra al pasar de 110 px o con un tirón rápido (más de 0,11 px/ms), como en Bloom OS. */
+function arrastrarParaCerrar(panel, zonas) {
+  let y0 = 0, t0 = 0, dy = 0, puntero = null;
+  const empezar = e => {
+    if (puntero != null || e.button > 0 || e.target.closest('button, a, input, select, textarea, label')) return;
+    puntero = e.pointerId; y0 = e.clientY; t0 = performance.now(); dy = 0;
+    panel.style.animation = 'none'; panel.style.transition = 'none';
+    try { e.currentTarget.setPointerCapture(puntero); } catch (err) { /* sin captura */ }
+  };
+  const mover = e => {
+    if (e.pointerId !== puntero) return;
+    dy = e.clientY - y0;
+    panel.style.transform = `translateY(${dy > 0 ? dy : -Math.sqrt(-dy) * 2}px)`;
+  };
+  const soltar = e => {
+    if (e.pointerId !== puntero) return;
+    puntero = null;
+    const v = Math.abs(dy) / Math.max(1, performance.now() - t0);
+    if (dy > 110 || (dy > 16 && v > 0.11)) cerrarHoja();
+    else { panel.style.transition = 'transform 0.32s var(--ease-sheet)'; panel.style.transform = ''; }
+  };
+  for (const z of zonas) {
+    z.addEventListener('pointerdown', empezar);
+    z.addEventListener('pointermove', mover);
+    z.addEventListener('pointerup', soltar);
+    z.addEventListener('pointercancel', soltar);
+  }
 }
 /* Confirmación dentro de la app (el visor de Claude no muestra confirm()). */
 let resolverConfirmar = null;
@@ -1064,6 +1124,7 @@ function pararGonio() { if (gon) { window.removeEventListener('devicemotion', on
 /* ---------- Acciones ---------- */
 const ACC = {};
 ACC.cerrar = () => cerrarHoja();
+ACC.volver = () => volver();
 ACC['conf-si'] = () => { const r = resolverConfirmar; resolverConfirmar = null; cerrarHoja(); r?.(true); };
 ACC['conf-no'] = () => cerrarHoja();
 ACC['guardar-perfil'] = () => {
@@ -1124,9 +1185,9 @@ ACC.serie = el => {
   sa.hechas[e.id] = (sa.hechas[e.id] || 0) >= n ? n - 1 : n; guardar(); pintar(true);
   if (sa.hechas[e.id] === (e.series || 1)) navigator.vibrate?.(40);
 };
-ACC['ej-sig'] = () => { S.sesionActual.idx++; guardar(); pararCrono(); pintar(); };
-ACC['ej-ant'] = () => { S.sesionActual.idx = Math.max(0, S.sesionActual.idx - 1); guardar(); pararCrono(); pintar(); };
-ACC['salir-guiada'] = () => { pararCrono(); ir(S.sesionActual?.tipo === 'fuerza' ? 'sesion' : 'hoy'); };
+ACC['ej-sig'] = () => { S.sesionActual.idx++; guardar(); pararCrono(); pintar(false, 'push'); };
+ACC['ej-ant'] = () => { S.sesionActual.idx = Math.max(0, S.sesionActual.idx - 1); guardar(); pararCrono(); pintar(false, 'pop'); };
+ACC['salir-guiada'] = () => { pararCrono(); volver('sesion'); };
 ACC['terminar-sesion'] = () => { pararCrono(); hojaFinSesion(); };
 ACC['guardar-sesion'] = () => {
   const sa = S.sesionActual; if (!sa) return cerrarHoja();
@@ -1226,14 +1287,14 @@ ACC.recordatorio = async () => {
   const [hh, mm] = ($('#aj-hora').value || '20:00').split(':'); const d = sumarDias(hoyISO(), 1).replace(/-/g, '');
   const fin = `${z2((+hh + (+mm + 15 >= 60 ? 1 : 0)) % 24)}${z2((+mm + 15) % 60)}`;
   const ahora = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
-  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Mi rodilla//ES', 'BEGIN:VEVENT', `UID:${uid()}@mi-rodilla`, `DTSTAMP:${ahora}`, `DTSTART:${d}T${z2(hh)}${z2(mm)}00`, `DTEND:${d}T${fin}00`, 'RRULE:FREQ=DAILY', 'SUMMARY:Rodilla: chequeo y sesión', 'DESCRIPTION:Abre Mi rodilla', 'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', 'DESCRIPTION:Rodilla: chequeo y sesión', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
-  await compartirArchivo(new Blob([ics], { type: 'text/calendar' }), 'recordatorio-rodilla.ics');
+  const ics = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Rochilla//ES', 'BEGIN:VEVENT', `UID:${uid()}@rochilla`, `DTSTAMP:${ahora}`, `DTSTART:${d}T${z2(hh)}${z2(mm)}00`, `DTEND:${d}T${fin}00`, 'RRULE:FREQ=DAILY', 'SUMMARY:Rochilla: chequeo y sesión', 'DESCRIPTION:Abre Rochilla', 'BEGIN:VALARM', 'TRIGGER:PT0M', 'ACTION:DISPLAY', 'DESCRIPTION:Rochilla: chequeo y sesión', 'END:VALARM', 'END:VEVENT', 'END:VCALENDAR'].join('\r\n');
+  await compartirArchivo(new Blob([ics], { type: 'text/calendar' }), 'recordatorio-rochilla.ics');
 };
 ACC.exportar = async el => {
   if (EMBEBIDA) return avisoEmbebida();
   const datos = JSON.parse(JSON.stringify(S)); datos.sesionActual = null; datos.exportado = new Date().toISOString();
   if (el.dataset.fotos) { datos.fotosDatos = {}; for (const f of S.fotos) { const b = await FotosDB.get(f.id); if (b) datos.fotosDatos[f.id] = await blobADataURL(b); } }
-  await compartirArchivo(new Blob([JSON.stringify(datos)], { type: 'application/json' }), `mi-rodilla-${hoyISO()}.json`);
+  await compartirArchivo(new Blob([JSON.stringify(datos)], { type: 'application/json' }), `rochilla-${hoyISO()}.json`);
   S.ultimaCopia = hoyISO(); guardar();
 };
 ACC['borrar-todo'] = async () => {
@@ -1247,7 +1308,7 @@ ACC['borrar-todo'] = async () => {
 ACC.imprimir = () => EMBEBIDA ? avisoEmbebida() : window.print();
 ACC['compartir-informe'] = async () => {
   const t = textoInforme();
-  if (navigator.share) { try { await navigator.share({ title: 'Informe de rehabilitación', text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
+  if (navigator.share) { try { await navigator.share({ title: 'Informe de rehabilitación · Rochilla', text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
   try { await navigator.clipboard.writeText(t); avisar('Resumen copiado'); } catch (e) { avisar('No se ha podido compartir'); }
 };
 
@@ -1306,32 +1367,142 @@ function pararCrono() { if (UI.crono) { clearInterval(UI.crono); UI.crono = null
 let avisoT = null;
 function avisar(t) { const el = $('#aviso'); el.textContent = t; el.classList.add('ver'); clearTimeout(avisoT); avisoT = setTimeout(() => el.classList.remove('ver'), 2600); }
 
-/* ---------- Navegación ---------- */
-const TITULOS = { hoy: 'Mi rodilla', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', articulo: 'Aprender', ajustes: 'Ajustes', evaluar: 'Avanzar de fase', guiada: 'Sesión', informe: 'Informe', alarma: 'Señales de alarma', bienvenida: 'Mi rodilla' };
+/* ---------- Navegación ----------
+   Como una app: cuatro pestañas raíz y subpantallas que entran desde la derecha con «Volver» en la cabecera.
+   Rutas por # con guion («progreso-movilidad»): el visor de Claude solo admite #nombre sencillo, sin barras.
+   NAVEG.pila lleva las pantallas por las que se ha entrado; solo se vuelve con history.back() cuando la anterior
+   es de la app (así nunca se sale del visor ni de la app por error). */
+const TITULOS = { hoy: 'Hoy', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', articulo: 'Aprender', ajustes: 'Ajustes', evaluar: 'Avanzar de fase', guiada: 'Sesión', informe: 'Informe', alarma: 'Señales de alarma', bienvenida: 'Rochilla' };
 const NAV = { hoy: 'hoy', evaluar: 'hoy', alarma: 'hoy', sesion: 'sesion', guiada: 'sesion', progreso: 'progreso', informe: 'progreso', aprender: 'aprender', articulo: 'aprender' };
-function ir(destino) { if (location.hash === '#' + destino) pintar(); else location.hash = destino; }
-function pintar(mantenerScroll = false) {
-  const h = decodeURIComponent(location.hash.replace(/^#/, '')) || 'hoy';
-  /* Rutas tipo «progreso-movilidad»: el visor de Claude solo admite #nombre sencillo, sin barras. */
+const RAIZ = ['hoy', 'sesion', 'progreso', 'aprender'];
+const PADRE = { evaluar: 'hoy', alarma: 'hoy', ajustes: 'hoy', guiada: 'sesion', articulo: 'aprender', informe: 'progreso', bienvenida: 'ajustes' };
+const ETQ_VOLVER = { hoy: 'Hoy', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', ajustes: 'Ajustes', evaluar: 'Fase', alarma: 'Alarmas', informe: 'Informe', articulo: 'Artículo', bienvenida: 'Perfil', guiada: 'Sesión' };
+const rutaDe = h => { const g = String(h).indexOf('-'); return g < 0 ? String(h) : String(h).slice(0, g); };
+const hashActual = () => decodeURIComponent(location.hash.replace(/^#/, '')) || 'hoy';
+const NAVEG = { pila: [hashActual()], modo: null, actual: null, scroll: {}, atrasT: null };
+
+/* modo: 'push' (subpantalla), 'raiz' (cambiar de pestaña), 'reemplazar' (selector dentro de la pantalla), 'atras' */
+function ir(destino, modo) {
+  modo = modo || (!S.perfil || RAIZ.includes(rutaDe(destino)) ? 'raiz' : 'push');
+  if (location.hash === '#' + destino) { pintar(); return; }
+  if (NAVEG.actual != null) NAVEG.scroll[NAVEG.actual] = $('#vista').scrollTop;
+  NAVEG.modo = modo;
+  if (modo !== 'push') {
+    try { history.replaceState(history.state, '', location.href.replace(/#.*$/, '') + '#' + destino); alCambiarHash(); return; }
+    catch (e) { /* si el visor no deja reescribir la dirección, se navega normal */ }
+  }
+  location.hash = destino;
+}
+function volver(respaldo) {
+  const p = NAVEG.pila;
+  if (p.length > 1) {
+    NAVEG.scroll[NAVEG.actual] = $('#vista').scrollTop;
+    NAVEG.modo = 'pop';
+    const antes = location.hash, destino = p[p.length - 2];
+    history.back();
+    clearTimeout(NAVEG.atrasT);
+    NAVEG.atrasT = setTimeout(() => { if (location.hash === antes && NAVEG.modo === 'pop') { NAVEG.modo = null; p.pop(); ir(destino, 'atras'); } }, 400);
+    return;
+  }
+  ir(respaldo || PADRE[UI.ruta] || 'hoy', 'atras');
+}
+function alCambiarHash() {
+  clearTimeout(NAVEG.atrasT);
+  const h = hashActual(), p = NAVEG.pila, modo = NAVEG.modo; NAVEG.modo = null;
+  let dir;
+  if (modo === 'raiz') { NAVEG.pila = [h]; dir = 'tab'; }
+  else if (modo === 'atras') { NAVEG.pila = [h]; dir = 'pop'; }
+  else if (modo === 'reemplazar') { p[p.length - 1] = h; dir = 'reemplazar'; }
+  else if (modo === 'push') { p.push(h); dir = 'push'; }
+  else if (p.length > 1 && p[p.length - 2] === h) { p.pop(); dir = 'pop'; }   /* «atrás» del navegador o de Android */
+  else if (modo === 'pop') { NAVEG.pila = [h]; dir = 'pop'; }
+  else { p.push(h); dir = 'push'; }
+  pararCrono(); cerrarHoja(); pintar(false, dir);
+}
+window.addEventListener('hashchange', alCambiarHash);
+
+function pintarCabecera(r) {
+  const p = NAVEG.pila, conPerfil = !!S.perfil;
+  const atras = conPerfil && (p.length > 1 || !RAIZ.includes(r));
+  const dest = p.length > 1 ? rutaDe(p[p.length - 2]) : (PADRE[r] || 'hoy');
+  const bt = $('#volver');
+  if (!bt || !$('#cabecera')) return;
+  bt.hidden = !atras;
+  if (atras) { $('#volver-txt').textContent = ETQ_VOLVER[dest] || 'Atrás'; bt.setAttribute('aria-label', `Volver a ${ETQ_VOLVER[dest] || 'la pantalla anterior'}`); }
+  $('#btn-ajustes').hidden = !conPerfil || atras;
+  $('#titulo').textContent = r === 'bienvenida' && conPerfil ? 'Tu perfil' : (TITULOS[r] || 'Rochilla');
+  $('#cabecera').classList.toggle('sub', atras);
+}
+/* Cabecera con cristal en cuanto hay algo debajo; el título grande pasa a la cabecera cuando se esconde bajo ella */
+function actualizarCompacto() {
+  const main = $('#vista'), top = $('#cabecera');
+  if (!main || !top) return;
+  top.classList.toggle('con-scroll', main.scrollTop > 2);
+  const h1 = $('.pantalla h1', main);
+  const compacto = h1 ? h1.getBoundingClientRect().bottom <= top.getBoundingClientRect().bottom - 2 : main.scrollTop > 24;
+  top.classList.toggle('compacto', compacto);
+}
+/* Entrada de cada pantalla: corta y desde donde tiene sentido (las subpantallas, desde la derecha; al volver, desde
+   la izquierda; al cambiar de pestaña, un fundido). Con «reducir movimiento», solo el fundido. */
+function animarEntrada(dir) {
+  const el = $('#vista > .pantalla'); if (!el?.animate || document.hidden) return;
+  const quieto = sinMovimiento();
+  const desde = quieto ? 'none' : dir === 'push' ? 'translateX(28px)' : dir === 'pop' ? 'translateX(-28px)' : 'translateY(6px)';
+  el.animate([{ opacity: 0, transform: desde }, { opacity: 1, transform: 'none' }], { duration: quieto ? 140 : dir === 'push' || dir === 'pop' ? 280 : 220, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' });
+}
+function pintar(mantenerScroll = false, dir = null) {
+  const h = hashActual();
   const guion = h.indexOf('-');
   let r = guion < 0 ? h : h.slice(0, guion);
   const sub = guion < 0 ? undefined : h.slice(guion + 1);
   if (!S.perfil && r !== 'bienvenida') r = 'bienvenida';
   if (!VISTAS[r]) r = 'hoy';
-  const y = window.scrollY;
-  $('#vista').innerHTML = VISTAS[r](sub);
-  $('#titulo').textContent = TITULOS[r] || 'Mi rodilla';
+  const main = $('#vista'), y = main.scrollTop;
+  main.innerHTML = `<div class="pantalla">${VISTAS[r](sub)}</div>`;
+  UI.ruta = r;
+  pintarCabecera(r);
   document.body.classList.toggle('nav-oculta', r === 'guiada' || !S.perfil);
-  $$('#nav button').forEach(b => b.classList.toggle('activo', b.dataset.ir === NAV[r]));
-  $('.top .icono-btn').hidden = !S.perfil;
-  window.scrollTo(0, mantenerScroll ? y : 0);
+  $$('#nav button').forEach(b => { const si = b.dataset.ir === NAV[r]; b.classList.toggle('activo', si); if (si) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  main.scrollTop = mantenerScroll ? y : (dir === 'pop' || dir === 'tab') ? (NAVEG.scroll[h] || 0) : 0;
+  NAVEG.actual = h; NAVEG.scroll[h] = main.scrollTop;
+  actualizarCompacto();
+  if (dir && !mantenerScroll) animarEntrada(dir);
   if (r === 'bienvenida') actualizarFormPerfil();
   $$('img[data-foto]').forEach(async img => { const u = await urlFoto(img.dataset.foto); if (u) img.src = u; });
 }
-window.addEventListener('hashchange', () => { pararCrono(); cerrarHoja(); pintar(); });
+let compactoRaf = 0;
+$('#vista').addEventListener('scroll', () => {
+  if (compactoRaf) return;
+  compactoRaf = requestAnimationFrame(() => { compactoRaf = 0; actualizarCompacto(); if (NAVEG.actual != null) NAVEG.scroll[NAVEG.actual] = $('#vista').scrollTop; });
+}, { passive: true });
+window.addEventListener('resize', () => actualizarCompacto());
 
+/* Un toque, una acción: dos toques seguidos al mismo botón (o el segundo de un doble toque) no repiten la acción,
+   y una acción que espera (por ejemplo, una confirmación) no se puede lanzar dos veces. */
+let ultimoToque = { clave: '', t: 0 };
+function repetido(el) {
+  const clave = Object.entries(el.dataset).filter(([k]) => k !== 'ocupado').map(([k, v]) => k + '=' + v).join('&');
+  const ahora = performance.now(), rep = clave === ultimoToque.clave && ahora - ultimoToque.t < 450;
+  ultimoToque = { clave, t: ahora };
+  return rep;
+}
+function irDesde(el) {
+  const destino = el.dataset.ir, r = UI.ruta;
+  if (el.closest('#nav')) {
+    /* Pestaña: si ya estás en ella, sube arriba del todo; si no, cambia de pestaña (sin apilar historial) */
+    if (NAV[r] === destino && r === rutaDe(destino) && NAVEG.pila.length <= 1) { $('#vista').scrollTo({ top: 0, behavior: sinMovimiento() ? 'auto' : 'smooth' }); return; }
+    return ir(destino, 'raiz');
+  }
+  if (el.closest('.seg')) return ir(destino, 'reemplazar');   /* apartados de Progreso */
+  const t = rutaDe(destino);
+  if (RAIZ.includes(r) && RAIZ.includes(t) && t !== r) return ir(destino, 'raiz');   /* atajo a otra pestaña */
+  ir(destino, 'push');
+}
+
+/* iOS solo pinta el estado :active (botón que se hunde) si hay algún escuchador de toques */
+document.addEventListener('touchstart', () => {}, { passive: true });
 document.addEventListener('click', async e => {
-  if (e.target.id === 'hoja') return cerrarHoja();
+  if (e.target.id === 'hoja') { if (!e.target.classList.contains('entrando')) cerrarHoja(); return; }
   const op = e.target.closest('.opciones button');
   if (op) {
     const g = op.parentElement;
@@ -1345,9 +1516,15 @@ document.addEventListener('click', async e => {
     box.dataset.v = v; $('output', box).textContent = fmt(v, 1); return;
   }
   const irEl = e.target.closest('[data-ir]');
-  if (irEl) { e.preventDefault(); ir(irEl.dataset.ir); return; }
+  if (irEl) { e.preventDefault(); if (!repetido(irEl)) irDesde(irEl); return; }
   const ac = e.target.closest('[data-accion]');
-  if (ac && ACC[ac.dataset.accion]) { e.preventDefault(); await ACC[ac.dataset.accion](ac, e); }
+  if (ac && ACC[ac.dataset.accion]) {
+    e.preventDefault();
+    if (ac.dataset.ocupado || repetido(ac)) return;
+    ac.dataset.ocupado = '1'; ac.setAttribute('aria-busy', 'true');
+    try { await ACC[ac.dataset.accion](ac, e); }
+    finally { ac.removeAttribute('data-ocupado'); ac.removeAttribute('aria-busy'); }
+  }
 });
 document.addEventListener('input', e => { if (e.target.matches('input[type=range][data-salida]')) $('#' + e.target.dataset.salida).textContent = e.target.value; });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#hoja').hidden) cerrarHoja(); });

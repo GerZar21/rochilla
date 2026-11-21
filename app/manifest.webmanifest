@@ -1,7 +1,7 @@
 {
-  "name": "Mi rodilla",
-  "short_name": "Rodilla",
-  "description": "Seguimiento personal de la rehabilitación del ligamento cruzado anterior.",
+  "name": "Rochilla",
+  "short_name": "Rochilla",
+  "description": "Rochilla: seguimiento personal de la rehabilitación del ligamento cruzado anterior.",
   "lang": "es",
   "start_url": "./index.html",
   "scope": "./",

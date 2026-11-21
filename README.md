@@ -1,6 +1,6 @@
-# Mi rodilla (rehab-lca)
+# Rochilla (rehab-lca)
 
-App propia para seguir la rehabilitación del ligamento cruzado anterior, antes y después de operar, sin pagar una suscripción. Creada el 21 nov 2026.
+App propia para seguir la rehabilitación del ligamento cruzado anterior, antes y después de operar, sin pagar una suscripción. Creada el 21 nov 2026 como «Mi rodilla»; desde la misma noche se llama **Rochilla**. Los nombres internos (`rehablca.v1`, `mi-rodilla` en el servidor) no cambian para no perder datos.
 
 No sustituye al cirujano ni al fisio: si dicen algo distinto, manda lo que digan ellos.
 
@@ -20,7 +20,8 @@ No sustituye al cirujano ni al fisio: si dicen algo distinto, manda lo que digan
   - Gráficos, logros, racha y resumen semanal.
 - **Aprender**: 14 artículos cortos escritos para la app, uno de ellos sobre «Mientras esperas la operación». También las señales de alarma.
 - **Informe para el fisio**: se puede imprimir o guardar en PDF.
-- **Copia de seguridad** y recordatorio diario en el calendario.
+- **Copia de seguridad** (archivo `rochilla-AAAA-MM-DD.json`; las copias antiguas `mi-rodilla-*.json` se siguen pudiendo recuperar) y recordatorio diario en el calendario.
+- **Se maneja como una app**: la cabecera y la barra de pestañas no se mueven al bajar (tampoco con el rebote del iPhone), las subpantallas tienen «Volver» arriba, el título grande se encoge en la cabecera al bajar, las hojas se cierran arrastrándolas hacia abajo y cada botón responde al tocarlo sin repetirse con un doble toque. Las lecciones salen de Bloom OS: `investigacion/lecciones-bloom.md`.
 
 ## Cómo se usa
 
@@ -68,7 +69,7 @@ rehab-lca/
 │   ├── protocolo.js        etapas, criterios, ejercicios, alarmas y cómo medir
 │   ├── aprender.js         artículos
 │   └── manifest.webmanifest, sw.js, iconos/
-├── investigacion/          fuentes clínicas
+├── investigacion/          fuentes clínicas y lecciones-bloom.md (cómo debe comportarse en el móvil)
 └── datos/                  tus datos en el PC (no se sube)
 ```
 

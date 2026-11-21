@@ -2,6 +2,7 @@
 datos/
 *.json.bak
 mi-rodilla-*.json
+rochilla-*.json
 
 # Sistema
 __pycache__/
@@ -11,3 +12,5 @@ desktop.ini
 
 # Dossier sobre la app comercial: solo en local
 investigacion/complete-acl*.md
+# Lecciones de otro proyecto privado: solo en local
+investigacion/lecciones-bloom.md

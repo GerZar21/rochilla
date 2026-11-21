@@ -1,5 +1,7 @@
-/* Mi rodilla · capa visual.
-   Todos los colores viven en variables. El tema oscuro solo redefine variables. */
+/* Rochilla · capa visual.
+   Todos los colores viven en variables. El tema oscuro solo redefine variables.
+   Estructura de app (lecciones de Bloom OS, investigacion/lecciones-bloom.md): la página no se desplaza nunca;
+   cabecera y barra de pestañas quedan fijas y solo se mueve el contenido (#vista), también con el rebote de iOS. */
 :root {
   /* Superficies y texto */
   --bg: #f5f6f8;
@@ -67,6 +69,9 @@
 
   --radius: 20px;
   --nav-h: 64px;
+  --top-h: 52px;
+  --ancho: 560px;
+  --ease-salida: cubic-bezier(0.4, 0, 1, 1);
   --safe-b: env(safe-area-inset-bottom, 0px);
   --safe-t: env(safe-area-inset-top, 0px);
   --safe-l: env(safe-area-inset-left, 0px);
@@ -165,7 +170,9 @@
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
-html, body { margin: 0; }
+/* La página entera queda quieta: ni se desplaza ni rebota. Solo #vista y las hojas tienen desplazamiento propio. */
+html, body { margin: 0; height: 100%; overflow: hidden; overscroll-behavior: none; }
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(--bg); }
 body {
   background: var(--bg);
   color: var(--ink);
@@ -178,6 +185,8 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 button, input, select, textarea { font: inherit; color: inherit; }
+/* 16 px como mínimo en los campos: con menos, Safari amplía la página al escribir */
+input, select, textarea { font-size: max(16px, 1rem); }
 button { cursor: pointer; }
 a { color: var(--accent); }
 h1, h2, h3 { margin: 0; line-height: 1.18; letter-spacing: -0.02em; font-weight: 800; }
@@ -187,35 +196,71 @@ h3 { font-size: 1.02rem; font-weight: 750; letter-spacing: -0.01em; }
 p { margin: 0; }
 :focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 10px; }
 
-#app { max-width: 560px; margin: 0 auto; min-height: 100vh; }
+/* ---------- Esqueleto de app ---------- */
+#app { position: fixed; inset: 0; overflow: hidden; }
 
-/* Barra superior: cristal */
+/* Cabecera: siempre arriba, fuera de lo que se desplaza. En reposo se funde con el fondo;
+   al bajar toma cristal y una línea fina, y el título grande se compacta en el centro. */
 .top {
-  position: sticky; top: 0; z-index: 20;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: calc(8px + var(--safe-t)) calc(8px + var(--safe-r)) 8px calc(16px + var(--safe-l));
+  position: absolute; top: 0; left: 0; right: 0; z-index: 20;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 4px;
+  height: calc(var(--top-h) + var(--safe-t));
+  padding: var(--safe-t) max(6px, var(--safe-r), calc((100% - var(--ancho)) / 2 + 6px)) 0 max(6px, var(--safe-l), calc((100% - var(--ancho)) / 2 + 6px));
+  background: transparent;
+  border-bottom: 1px solid transparent;
+  transition: background-color 200ms var(--ease), border-color 200ms var(--ease);
+  touch-action: none; -webkit-user-select: none; user-select: none;
+}
+.top.con-scroll {
   background: var(--glass);
-  border-bottom: 1px solid var(--glass-edge);
-  box-shadow: inset 0 -1px 0 var(--glass-line);
+  border-bottom-color: var(--glass-edge);
   backdrop-filter: saturate(1.8) blur(22px);
   -webkit-backdrop-filter: saturate(1.8) blur(22px);
 }
-.top-titulo { font-weight: 800; font-size: 1.15rem; letter-spacing: -0.02em; }
+.top-izq { grid-column: 1; justify-self: start; min-width: 0; max-width: 100%; display: flex; }
+.top-der { grid-column: 3; justify-self: end; display: flex; }
+.top-centro { grid-column: 2; display: grid; place-items: center; min-width: 0; max-width: min(56vw, 300px); pointer-events: none; }
+.top-centro > span {
+  grid-area: 1 / 1; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  font-size: 1.06rem; font-weight: 750; letter-spacing: -0.01em;
+  transition: opacity 200ms var(--ease), transform 200ms var(--ease);
+}
+.top-marca { font-weight: 800; letter-spacing: -0.02em; }
+.top-titulo { opacity: 0; transform: translateY(6px); }
+.top.compacto .top-titulo { opacity: 1; transform: none; }
+.top.sub .top-marca, .top.compacto .top-marca { opacity: 0; transform: translateY(-6px); }
 .icono-btn {
   border: 0; background: transparent; width: 44px; height: 44px; border-radius: 50%;
   display: grid; place-items: center; color: var(--ink-2);
   transition: transform 160ms var(--ease), background-color 160ms ease;
 }
 .icono-btn:active { background: var(--line); transform: scale(0.94); }
-
-main {
-  padding: 12px max(16px, var(--safe-r)) calc(var(--nav-h) + var(--safe-b) + 40px) max(16px, var(--safe-l));
-  outline: none;
+/* Volver, como en iOS: flecha y el nombre de la pantalla a la que vuelves */
+.volver {
+  display: inline-flex; align-items: center; gap: 0; min-height: 44px; max-width: 100%;
+  padding: 0 10px 0 2px; border: 0; border-radius: 12px; background: transparent;
+  color: var(--accent); font-size: 1.02rem; font-weight: 600; letter-spacing: -0.01em;
+  transition: opacity 160ms var(--ease);
 }
+.volver svg { flex: 0 0 auto; margin-right: -1px; }
+.volver span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.volver:active { opacity: 0.45; transform: none; }
 
-/* Barra inferior: cápsula de cristal flotante */
+/* El contenido: la única parte que se desplaza. Pasa por debajo de la cabecera y de la barra (cristal). */
+main {
+  position: absolute; inset: 0; z-index: 1;
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;   /* en el PC, el contenido queda centrado bajo la cabecera aunque haya barra */
+  padding: calc(var(--top-h) + var(--safe-t) + 4px) max(16px, var(--safe-r)) calc(var(--nav-h) + var(--safe-b) + 44px) max(16px, var(--safe-l));
+  scroll-padding-top: calc(var(--top-h) + var(--safe-t) + 8px);
+  outline: none; touch-action: manipulation;
+}
+/* Siempre 1 px más alto que la caja: así el gesto siempre lo recoge el contenido y nunca la página (iOS) */
+.pantalla { max-width: var(--ancho); margin: 0 auto; min-height: calc(100% + 1px); }
+
+/* Barra inferior: cápsula de cristal flotante, fija */
 .nav {
-  position: fixed; left: 16px; right: 16px; bottom: calc(10px + var(--safe-b)); z-index: 30;
+  position: absolute; left: max(16px, var(--safe-l)); right: max(16px, var(--safe-r)); bottom: calc(10px + var(--safe-b)); z-index: 30;
   display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
   max-width: 528px; margin: 0 auto;
   height: var(--nav-h); padding: 6px;
@@ -225,6 +270,7 @@ main {
   box-shadow: var(--glass-hi), var(--glass-shadow);
   backdrop-filter: saturate(1.8) blur(22px);
   -webkit-backdrop-filter: saturate(1.8) blur(22px);
+  touch-action: none; -webkit-user-select: none; user-select: none;
 }
 .nav button {
   border: 0; background: transparent; color: var(--muted);
@@ -233,14 +279,24 @@ main {
   font-size: 0.72rem; font-weight: 650;
   transition: background-color 200ms ease, color 200ms ease, transform 160ms var(--ease);
 }
-.nav button:active { transform: scale(0.95); }
+.nav button:active { transform: scale(0.92); }
 .nav button.activo {
   color: var(--accent);
   background: var(--accent-soft);
   box-shadow: inset 0 0 0 1px var(--accent-line);
 }
 .nav-oculta .nav { display: none; }
-.nav-oculta main { padding-bottom: 32px; }
+.nav-oculta main { padding-bottom: calc(var(--safe-b) + 32px); }
+
+/* Todo lo que se toca responde: se hunde un poco al pulsar, sin destello, sin zoom por doble toque
+   y sin menú ni selección al mantenerlo pulsado. Las reglas propias de cada botón mandan sobre esta. */
+button, label.btn, [data-accion], [data-ir], .pulsable, summary { touch-action: manipulation; -webkit-touch-callout: none; }
+button, label.btn, .chip, .seg, .opciones, .paso, .series, .check { -webkit-user-select: none; user-select: none; }
+:where(button, label.btn) { transition: transform 160ms var(--ease); }
+:where(button, label.btn):active:not(:disabled) { transform: scale(0.97); }
+.item.pulsable, .cuerpo.pulsable { transition: opacity 160ms var(--ease); }
+.item.pulsable:active, .cuerpo.pulsable:active { opacity: 0.55; }
+button[aria-busy="true"] { opacity: 0.6; }
 
 /* Bloques */
 .pila { display: flex; flex-direction: column; gap: 12px; }
@@ -249,8 +305,9 @@ main {
 .rejilla-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .rejilla-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .espacio { height: 8px; }
-.saludo { padding: 8px 0 4px; }
-.saludo h1 { font-size: 1.9rem; }
+/* Título grande de cada pantalla: al bajar, se compacta en el centro de la cabecera */
+.saludo { padding: 4px 0 4px; }
+.saludo h1 { font-size: 2.125rem; line-height: 1.12; letter-spacing: -0.025em; text-wrap: balance; }
 .saludo p { color: var(--muted); margin-top: 4px; }
 
 .card {
@@ -469,15 +526,22 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 .series button.hecho { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .crono { font-size: 3.2rem; font-weight: 800; text-align: center; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 
-/* Hoja inferior: cristal */
+/* Hoja inferior: cristal. Sube con curva de cajón, se baja arrastrando desde el asa o la cabecera
+   (o con un tirón rápido) y sale más deprisa de lo que entra. Detrás, nada se mueve. */
 .hoja {
   position: fixed; inset: 0; z-index: 50; background: var(--scrim);
   display: flex; align-items: flex-end; justify-content: center;
-  animation: velo 0.2s ease-out;
+  animation: velo 0.24s var(--ease);
+  transition: background-color 0.26s var(--ease);
 }
 .hoja[hidden] { display: none; }
+/* Al entrar y al salir, la hoja no recoge toques; el velo sí, para que un doble toque no caiga en lo de detrás */
+.hoja.saliendo { background-color: transparent; }
+.hoja.entrando .panel, .hoja.saliendo .panel { pointer-events: none; }
 .hoja .panel {
-  width: calc(100% - 16px); max-width: 544px; max-height: 92vh; overflow-y: auto;
+  width: calc(100% - 16px); max-width: 544px;
+  max-height: calc(100vh - var(--safe-t) - 24px); max-height: calc(100dvh - var(--safe-t) - 24px);
+  overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
   margin-bottom: calc(8px + var(--safe-b));
   background: var(--glass-sheet);
   border: 1px solid var(--glass-line);
@@ -486,11 +550,17 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
   backdrop-filter: saturate(1.8) blur(28px);
   -webkit-backdrop-filter: saturate(1.8) blur(28px);
   padding: 10px 16px 20px;
-  animation: subir 0.32s var(--ease-sheet);
-  overscroll-behavior: contain;
+  animation: subir 0.42s var(--ease-sheet);
+  will-change: transform; outline: none; touch-action: manipulation;
 }
-.hoja .asa { width: 40px; height: 5px; border-radius: 99px; background: var(--line-strong); margin: 2px auto 12px; }
-.hoja .cab-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+/* El asa se ve pequeña pero se coge con un dedo entero */
+.hoja .asa {
+  box-sizing: content-box; width: 40px; height: 5px; padding: 10px 48px 12px; margin: -10px auto 0;
+  border-radius: 99px; background: var(--line-strong); background-clip: content-box;
+  touch-action: none; cursor: grab;
+}
+.hoja .cab-panel { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; touch-action: none; cursor: grab; }
+.hoja .cab-panel .enlace { cursor: pointer; }
 .hoja .card { box-shadow: none; }
 @keyframes subir { from { transform: translateY(100%); } to { transform: none; } }
 @keyframes velo { from { opacity: 0; } to { opacity: 1; } }
@@ -515,7 +585,7 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 
 /* Sin soporte de cristal: fondos sólidos para que se lea igual */
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .top, .nav { background: var(--card); }
+  .top.con-scroll, .nav { background: var(--card); }
   .hoja .panel { background: var(--bg); }
 }
 
@@ -529,17 +599,22 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
-  .btn:active, .nav button:active, .card.pulsable:active, .seg button:active, .opciones button:active { transform: none; }
+  .btn:active, .nav button:active, .card.pulsable:active, .seg button:active, .opciones button:active,
+  :where(button, label.btn):active:not(:disabled), .icono-btn:active, .paso button:active, .series button:active { transform: none; }
 }
 
 @media (min-width: 600px) {
   main { padding-left: 20px; padding-right: 20px; }
 }
 
+/* Al imprimir el informe, la página vuelve a ser un documento normal que fluye en varias hojas */
 @media print {
-  .top, .nav, .no-imprimir { display: none !important; }
+  .top, .nav, .no-imprimir, .hoja, .aviso { display: none !important; }
   :root { --bg: #fff; --card: #fff; --ink: #111; --ink-2: #333; --muted: #555; --line: #ddd; }
+  html, body { height: auto; overflow: visible; }
   body { background: #fff; }
+  #app, main { position: static; overflow: visible; height: auto; }
   main { padding: 0; }
+  .pantalla { min-height: 0; max-width: none; }
   .card { border: 1px solid #ddd; break-inside: avoid; box-shadow: none; }
 }
