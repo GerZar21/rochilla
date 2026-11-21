@@ -83,7 +83,8 @@ function sanear(d) {
 }
 let aviso0 = null;
 function cargar() {
-  const raw = localStorage.getItem(CLAVE);
+  let raw = null;
+  try { raw = localStorage.getItem(CLAVE); } catch (e) { return estadoVacio(); }
   if (!raw) return estadoVacio();
   try { return sanear(JSON.parse(raw)); }
   catch (e) {
@@ -126,7 +127,7 @@ async function conectarServidor() {
     const r = await fetch('api/datos', { cache: 'no-store' });
     if (r.ok) {
       const remoto = sanear(await r.json());
-      if ((remoto.modificado || 0) > (S.modificado || 0)) { S = remoto; localStorage.setItem(CLAVE, JSON.stringify(S)); return true; }
+      if ((remoto.modificado || 0) > (S.modificado || 0)) { S = remoto; try { localStorage.setItem(CLAVE, JSON.stringify(S)); } catch (e) { /* sigue en memoria */ } return true; }
     }
     if (S.perfil || S.checkins.length) subirAlServidor();
   } catch (e) { /* sin datos en el PC todavía */ }
@@ -247,17 +248,17 @@ function evaluar(c, faseId) {
   const res = (ok, detalle) => ({ estado: ok ? 'ok' : 'no', detalle });
   switch (c.medida) {
     case 'ext_max': {
-      const m = ultimaMov('ext'); if (!m) return falta('Aún no has medido la extensión', 'progreso/movilidad');
+      const m = ultimaMov('ext'); if (!m) return falta('Aún no has medido la extensión', 'progreso-movilidad');
       if (c.profesional && m.ext <= u && m.metodo !== 'fisio') {
         const f = [...S.movilidad].reverse().find(x => x.ext != null && x.metodo === 'fisio');
-        if (!f || f.ext > u) return { estado: 'falta', detalle: `Tú mides ${fmtExt(m.ext)}: falta que lo confirme tu fisio (apúntalo como medido por el fisio)`, ir: 'progreso/movilidad' };
+        if (!f || f.ext > u) return { estado: 'falta', detalle: `Tú mides ${fmtExt(m.ext)}: falta que lo confirme tu fisio (apúntalo como medido por el fisio)`, ir: 'progreso-movilidad' };
       }
       return res(m.ext <= u, `Última: ${fmtExt(m.ext)} (${fCorta(m.fecha)})${m.metodo === 'fisio' ? ', medida por el fisio' : ''}`);
     }
     case 'derrame_estable': {
       const dias = c.dias || 14, desde = sumarDias(hoyISO(), -dias);
       const r = S.derrame.filter(d => d.fecha >= desde);
-      if (r.length < 2 || diasEntre(r[0].fecha, ultimo(r).fecha) < Math.floor(dias / 2)) return falta(`Mide el derrame al menos una vez por semana durante ${dias} días`, 'progreso/hinchazon');
+      if (r.length < 2 || diasEntre(r[0].fecha, ultimo(r).fecha) < Math.floor(dias / 2)) return falta(`Mide el derrame al menos una vez por semana durante ${dias} días`, 'progreso-hinchazon');
       const peor = r.reduce((a, d) => GRADOS.indexOf(d.grado) > GRADOS.indexOf(a) ? d.grado : a, '0');
       return res(GRADOS.indexOf(peor) <= GRADOS.indexOf(String(u)), `${r.length} medidas en ${dias} días · la peor: ${GRADO_TXT[peor]}`);
     }
@@ -275,46 +276,46 @@ function evaluar(c, faseId) {
         ['fuerza del cuádriceps', !!ultimaPrueba('cuad')], ['resistencia', RESISTENCIA.every(t => ultimaPrueba(t))], ['equilibrio', !!(ultimaPrueba('eq_abiertos') && ultimaPrueba('eq_cerrados'))],
       ];
       const faltan = hecho.filter(x => !x[1]).map(x => x[0]);
-      return faltan.length ? { estado: 'falta', detalle: `Te falta: ${faltan.join(', ')}`, ir: 'progreso/pruebas' } : res(true, 'Todas guardadas');
+      return faltan.length ? { estado: 'falta', detalle: `Te falta: ${faltan.join(', ')}`, ir: 'progreso-pruebas' } : res(true, 'Todas guardadas');
     }
-    case 'flex_min': { const m = ultimaMov('flex'); if (!m) return falta('Aún no has medido la flexión', 'progreso/movilidad'); return res(m.flex >= u, `Última: ${fmt(m.flex)}° (${fCorta(m.fecha)})`); }
-    case 'derrame_max': { const d = ultimo(S.derrame); if (!d) return falta('Haz la prueba del derrame', 'progreso/hinchazon'); return res(GRADOS.indexOf(d.grado) <= GRADOS.indexOf(String(u)), `Último: ${GRADO_TXT[d.grado]} (${fCorta(d.fecha)})`); }
+    case 'flex_min': { const m = ultimaMov('flex'); if (!m) return falta('Aún no has medido la flexión', 'progreso-movilidad'); return res(m.flex >= u, `Última: ${fmt(m.flex)}° (${fCorta(m.fecha)})`); }
+    case 'derrame_max': { const d = ultimo(S.derrame); if (!d) return falta('Haz la prueba del derrame', 'progreso-hinchazon'); return res(GRADOS.indexOf(d.grado) <= GRADOS.indexOf(String(u)), `Último: ${GRADO_TXT[d.grado]} (${fCorta(d.fecha)})`); }
     case 'dolor_max': { const v = mediaCampo('dolorActividad', 3); if (v == null) return falta('Haz el chequeo diario', 'checkin'); return res(v <= u, `Media de tus últimos chequeos: ${fmt(v, 1)}/10`); }
     case 'sin_cojera': { const c2 = [...S.checkins].reverse().find(x => x.cojera); if (!c2) return falta('Dilo en el chequeo diario', 'checkin'); return res(c2.cojera === 'no', `Último chequeo: ${TXT.cojera[c2.cojera].toLowerCase()}`); }
     case 'confianza_min': { const v = mediaCampo('confianza', 3); if (v == null) return falta('Haz el chequeo diario', 'checkin'); return res(v >= u, `Media de tus últimos chequeos: ${fmt(v, 1)}/10`); }
-    case 'slr_sin_lag': { const p = ultimaPrueba('slr'); if (!p) return falta('Haz la prueba de la pierna recta', 'progreso/pruebas'); return res(p.valor === 'si', p.valor === 'si' ? `Sin caída (${fCorta(p.fecha)})` : `Aún cae la rodilla (${fCorta(p.fecha)})`); }
+    case 'slr_sin_lag': { const p = ultimaPrueba('slr'); if (!p) return falta('Haz la prueba de la pierna recta', 'progreso-pruebas'); return res(p.valor === 'si', p.valor === 'si' ? `Sin caída (${fCorta(p.fecha)})` : `Aún cae la rodilla (${fCorta(p.fecha)})`); }
     case 'lsi_cuad': case 'lsi_isquios': {
       const t = c.medida === 'lsi_cuad' ? 'cuad' : 'isquios'; const v = lsiTipo(t);
-      if (v == null) return falta('Mide la fuerza de las dos piernas', 'progreso/pruebas');
+      if (v == null) return falta('Mide la fuerza de las dos piernas', 'progreso-pruebas');
       return res(v >= u, `Tu pierna operada rinde un ${fmt(v)} % de la sana`);
     }
     case 'lsi_saltos': {
       const v = SALTOS.map(lsiTipo).filter(x => x != null);
-      if (!v.length) return falta('Haz las pruebas de salto', 'progreso/pruebas');
+      if (!v.length) return falta('Haz las pruebas de salto', 'progreso-pruebas');
       const min = Math.min(...v); const completo = !c.todos || v.length === SALTOS.length;
       return res(min >= u && completo, `La peor: ${fmt(min)} % · ${v.length} de ${SALTOS.length} pruebas hechas`);
     }
-    case 'lsi_tipo': { const v = lsiTipo(c.tipo); if (v == null) return falta(`Haz la prueba: ${PRUEBAS[c.tipo].nombre.toLowerCase()}`, 'progreso/pruebas'); return res(v >= u, `${fmt(v)} % de la sana`); }
+    case 'lsi_tipo': { const v = lsiTipo(c.tipo); if (v == null) return falta(`Haz la prueba: ${PRUEBAS[c.tipo].nombre.toLowerCase()}`, 'progreso-pruebas'); return res(v >= u, `${fmt(v)} % de la sana`); }
     case 'resistencia': {
       const hechas = RESISTENCIA.map(t => ({ t, p: ultimaPrueba(t) })).filter(x => x.p);
-      if (!hechas.length) return falta('Haz las pruebas de puente, gemelo, plancha lateral y silla', 'progreso/pruebas');
+      if (!hechas.length) return falta('Haz las pruebas de puente, gemelo, plancha lateral y silla', 'progreso-pruebas');
       const bien = hechas.filter(({ t, p }) => lsiDe(p) >= u && p.op >= (PRUEBAS[t].min || 0));
       return res(bien.length === RESISTENCIA.length, `${bien.length} de ${RESISTENCIA.length} cumplen · ${hechas.length} hechas`);
     }
     case 'equilibrio': {
       const a = ultimaPrueba('eq_abiertos'), b = ultimaPrueba('eq_cerrados');
-      if (!a && !b) return falta('Haz las pruebas de equilibrio', 'progreso/pruebas');
+      if (!a && !b) return falta('Haz las pruebas de equilibrio', 'progreso-pruebas');
       const ok = a && b && a.op >= PRUEBAS.eq_abiertos.min && b.op >= PRUEBAS.eq_cerrados.min;
       return res(!!ok, `Ojos abiertos ${a ? fmt(a.op) + ' s' : '—'} · cerrados ${b ? fmt(b.op) + ' s' : '—'}`);
     }
     case 'funcion_min': { const v = mediaCampo('funcion', 3); if (v == null) return falta('Responde «cómo funciona tu rodilla» en el chequeo', 'checkin'); return res(v >= u, `Media de tus últimos chequeos: ${fmt(v, 1)}/10`); }
     case 'flex_pct': {
       const m = ultimaMov('flex'), s = S.perfil.flexSana;
-      if (!m) return falta('Aún no has medido la flexión', 'progreso/movilidad');
-      if (!s) return falta('Mide una vez la flexión de la rodilla sana', 'progreso/movilidad');
+      if (!m) return falta('Aún no has medido la flexión', 'progreso-movilidad');
+      if (!s) return falta('Mide una vez la flexión de la rodilla sana', 'progreso-movilidad');
       const pct = m.flex / s * 100; return res(pct >= u, `${fmt(m.flex)}° de ${fmt(s)}° de la sana (${fmt(pct)} %)`);
     }
-    case 'aclrsi_min': { const p = ultimaPrueba('acl_rsi'); if (!p) return falta('Haz el cuestionario ACL-RSI', 'progreso/pruebas'); return res(p.valor >= u, `Último: ${fmt(p.valor)} puntos`); }
+    case 'aclrsi_min': { const p = ultimaPrueba('acl_rsi'); if (!p) return falta('Haz el cuestionario ACL-RSI', 'progreso-pruebas'); return res(p.valor >= u, `Último: ${fmt(p.valor)} puntos`); }
     case 'semanas_min': {
       const s = semanas(); if (s == null) return falta('Pon la fecha en tu perfil', 'bienvenida');
       return res(s >= u, `Llevas ${Math.floor(s)} semanas`);
@@ -411,16 +412,16 @@ function grafLinea(series, o = {}) {
   const X = t => pl + (t - x0) / (x1 - x0) * (W - pl - pr);
   const Y = v => pt + (y1 - v) / (y1 - y0) * (H - pt - pb);
   let s = `<svg class="grafico" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.titulo || 'Gráfico')}">`;
-  for (const t of marcas(y0, y1, 4)) s += `<line x1="${pl}" x2="${W - pr}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" stroke="#e2e8f0"/><text x="${pl - 6}" y="${(Y(t) + 3).toFixed(1)}" text-anchor="end">${fmt(t, 1)}${o.sufijo || ''}</text>`;
-  if (o.objetivo != null) s += `<line x1="${pl}" x2="${W - pr}" y1="${Y(o.objetivo).toFixed(1)}" y2="${Y(o.objetivo).toFixed(1)}" stroke="#0f766e" stroke-dasharray="4 4" opacity=".7"/><text x="${pl + 4}" y="${(Y(o.objetivo) - 4).toFixed(1)}" text-anchor="start" style="fill:#0f766e">objetivo</text>`;
+  for (const t of marcas(y0, y1, 4)) s += `<line x1="${pl}" x2="${W - pr}" y1="${Y(t).toFixed(1)}" y2="${Y(t).toFixed(1)}" class="rej"/><text x="${pl - 6}" y="${(Y(t) + 3).toFixed(1)}" text-anchor="end">${fmt(t, 1)}${o.sufijo || ''}</text>`;
+  if (o.objetivo != null) s += `<line x1="${pl}" x2="${W - pr}" y1="${Y(o.objetivo).toFixed(1)}" y2="${Y(o.objetivo).toFixed(1)}" class="obj"/><text class="obj-t" x="${pl + 4}" y="${(Y(o.objetivo) - 4).toFixed(1)}" text-anchor="start">objetivo</text>`;
   const fx = [x0, (x0 + x1) / 2, x1];
   fx.forEach((t, i) => { s += `<text x="${X(t).toFixed(1)}" y="${H - 6}" text-anchor="${['start', 'middle', 'end'][i]}">${fCorta(hoyISO(new Date(t)))}</text>`; });
   for (const se of series) {
     const p = [...se.puntos].sort((a, b) => a.x < b.x ? -1 : 1);
     if (!p.length) continue;
     const d = p.map((q, i) => `${i ? 'L' : 'M'}${X(aFecha(q.x).getTime()).toFixed(1)},${Y(q.y).toFixed(1)}`).join(' ');
-    s += `<path d="${d}" fill="none" stroke="${se.color}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>`;
-    if (p.length <= 45) p.forEach(q => { s += `<circle cx="${X(aFecha(q.x).getTime()).toFixed(1)}" cy="${Y(q.y).toFixed(1)}" r="3" fill="#fff" stroke="${se.color}" stroke-width="2"/>`; });
+    s += `<path d="${d}" class="curva" style="stroke:${se.color}"/>`;
+    if (p.length <= 45) p.forEach(q => { s += `<circle cx="${X(aFecha(q.x).getTime()).toFixed(1)}" cy="${Y(q.y).toFixed(1)}" r="3" class="pto" style="stroke:${se.color}"/>`; });
     const u = p[p.length - 1];
     s += `<text x="${Math.min(X(aFecha(u.x).getTime()), W - pr - 2).toFixed(1)}" y="${(Y(u.y) - 8).toFixed(1)}" text-anchor="end" style="fill:${se.color};font-weight:700">${fmt(u.y, 1)}${o.sufijo || ''}</text>`;
   }
@@ -436,16 +437,16 @@ function grafBarras(datos, o = {}) {
   let s = `<svg class="grafico" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(o.titulo || 'Gráfico de barras')}">`;
   datos.forEach((d, i) => {
     const h = (d.v / max) * (H - pt - pb); const x = pl + i * bw + bw * 0.18; const w = bw * 0.64; const y = H - pb - h;
-    s += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(h, d.v ? 2 : 0).toFixed(1)}" rx="4" fill="${d.color || '#0f766e'}"/>`;
-    if (d.v) s += `<text x="${(x + w / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" style="font-weight:700;fill:#334155">${fmt(d.v, 1)}</text>`;
+    s += `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${w.toFixed(1)}" height="${Math.max(h, d.v ? 2 : 0).toFixed(1)}" rx="4" style="fill:${d.color || 'var(--g1)'}"/>`;
+    if (d.v) s += `<text x="${(x + w / 2).toFixed(1)}" y="${(y - 4).toFixed(1)}" text-anchor="middle" class="val-barra">${fmt(d.v, 1)}</text>`;
     s += `<text x="${(x + w / 2).toFixed(1)}" y="${H - 6}" text-anchor="middle">${esc(d.etq)}</text>`;
   });
-  if (o.objetivo) { const y = H - pb - (o.objetivo / max) * (H - pt - pb); s += `<line x1="${pl}" x2="${W - pr}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" stroke="#0f766e" stroke-dasharray="4 4" opacity=".7"/>`; }
+  if (o.objetivo) { const y = H - pb - (o.objetivo / max) * (H - pt - pb); s += `<line x1="${pl}" x2="${W - pr}" y1="${y.toFixed(1)}" y2="${y.toFixed(1)}" class="obj"/>`; }
   return s + '</svg>';
 }
 function anillo(v, total, etq) {
   const r = 30, c = 2 * Math.PI * r, f = total ? Math.min(1, v / total) : 0;
-  return `<div class="anillo"><svg viewBox="0 0 74 74" width="74" height="74"><circle cx="37" cy="37" r="${r}" fill="none" stroke="rgba(148,163,184,.25)" stroke-width="7"/><circle cx="37" cy="37" r="${r}" fill="none" stroke="#5eead4" stroke-width="7" stroke-linecap="round" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - f)).toFixed(1)}"/></svg><div class="centro"><div><b>${v}/${total}</b><br><span>${esc(etq)}</span></div></div></div>`;
+  return `<div class="anillo"><svg viewBox="0 0 74 74" width="74" height="74"><circle cx="37" cy="37" r="${r}" class="ani-pista"/><circle cx="37" cy="37" r="${r}" class="ani-valor" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${(c * (1 - f)).toFixed(1)}"/></svg><div class="centro"><div><b>${v}/${total}</b><br><span>${esc(etq)}</span></div></div></div>`;
 }
 
 /* ---------- Piezas de formulario ---------- */
@@ -550,7 +551,7 @@ VISTAS.hoy = () => {
   const refCopia = S.ultimaCopia || p.creado;
   if (!UI.servidor && refCopia && diasEntre(refCopia, hoyISO()) >= 7) recordatorios.push(`<div class="card pulsable" data-ir="ajustes"><div class="fila entre"><div><h3>Haz una copia de seguridad</h3><p class="sub">${S.ultimaCopia ? `La última fue el ${fCorta(S.ultimaCopia)}` : 'Aún no has hecho ninguna'}. Tus datos solo están en este dispositivo.</p></div><span class="chip acento">Copia</span></div></div>`);
   const ultM = ultimaMov('flex') || ultimaMov('ext');
-  if (!ultM || diasEntre(ultM.fecha, hoyISO()) >= 7) recordatorios.push(`<div class="card pulsable" data-ir="progreso/movilidad"><div class="fila entre"><div><h3>Toca medir la movilidad</h3><p class="sub">${ultM ? `La última fue el ${fCorta(ultM.fecha)}` : 'Aún no la has medido'}. Una vez por semana basta.</p></div><span class="chip acento">Medir</span></div></div>`);
+  if (!ultM || diasEntre(ultM.fecha, hoyISO()) >= 7) recordatorios.push(`<div class="card pulsable" data-ir="progreso-movilidad"><div class="fila entre"><div><h3>Toca medir la movilidad</h3><p class="sub">${ultM ? `La última fue el ${fCorta(ultM.fecha)}` : 'Aún no la has medido'}. Una vez por semana basta.</p></div><span class="chip acento">Medir</span></div></div>`);
 
   const art = ARTICULOS.find(a => (a.fases || []).includes(f.id) && !S.leidos[a.id]) || ARTICULOS.find(a => !S.leidos[a.id]);
   const ext = ultimaMov('ext'), flex = ultimaMov('flex'), der = ultimo(S.derrame);
@@ -579,11 +580,11 @@ VISTAS.hoy = () => {
     <div class="card"><ul style="margin:0;padding-left:20px">${(f.foco || f.objetivos || []).slice(0, 4).map(o => `<li>${esc(o)}</li>`).join('')}</ul></div>
     <div class="titulo-seccion"><h2>Tus números</h2><button data-ir="progreso">Ver todo</button></div>
     <div class="rejilla-3">
-      <div class="card pulsable dato" data-ir="progreso/movilidad"><span class="n">${fmtExt(ext?.ext)}</span><span class="l">Extensión</span></div>
-      <div class="card pulsable dato" data-ir="progreso/movilidad"><span class="n">${flex ? fmt(flex.flex) + '°' : '—'}</span><span class="l">Flexión</span></div>
-      <div class="card pulsable dato" data-ir="progreso/hinchazon"><span class="n">${der ? esc(der.grado) : '—'}</span><span class="l">Derrame</span></div>
+      <div class="card pulsable dato" data-ir="progreso-movilidad"><span class="n">${fmtExt(ext?.ext)}</span><span class="l">Extensión</span></div>
+      <div class="card pulsable dato" data-ir="progreso-movilidad"><span class="n">${flex ? fmt(flex.flex) + '°' : '—'}</span><span class="l">Flexión</span></div>
+      <div class="card pulsable dato" data-ir="progreso-hinchazon"><span class="n">${der ? esc(der.grado) : '—'}</span><span class="l">Derrame</span></div>
     </div>
-    ${art ? `<div class="titulo-seccion"><h2>Para leer hoy</h2></div><div class="card pulsable" data-ir="articulo/${art.id}"><h3>${esc(art.titulo)}</h3><p class="sub">${esc(art.resumen || '')}</p></div>` : ''}
+    ${art ? `<div class="titulo-seccion"><h2>Para leer hoy</h2></div><div class="card pulsable" data-ir="articulo-${art.id}"><h3>${esc(art.titulo)}</h3><p class="sub">${esc(art.resumen || '')}</p></div>` : ''}
     <div class="card pulsable" data-ir="alarma"><div class="fila entre"><div><h3>Señales de alarma</h3><p class="sub">Cuándo llamar al cirujano o ir a urgencias</p></div><span class="chip no">Ver</span></div></div>
     <p class="sub" style="text-align:center;margin-top:4px">Racha: ${racha()} ${racha() === 1 ? 'día' : 'días'} seguidos</p>
   </div>`;
@@ -694,7 +695,7 @@ VISTAS.evaluar = () => {
 const SUB_PROG = [['resumen', 'Resumen'], ['movilidad', 'Movilidad'], ['hinchazon', 'Hinchazón y muslo'], ['pruebas', 'Fuerza y saltos'], ['carrera', 'Carrera'], ['habitos', 'Día a día'], ['fotos', 'Fotos']];
 VISTAS.progreso = (sub = 'resumen') => {
   if (!SUB_PROG.some(([v]) => v === sub)) sub = 'resumen';
-  const seg = `<div class="seg">${SUB_PROG.map(([v, t]) => `<button data-ir="progreso/${v}" class="${sub === v ? 'activo' : ''}">${t}</button>`).join('')}</div>`;
+  const seg = `<div class="seg">${SUB_PROG.map(([v, t]) => `<button data-ir="progreso-${v}" class="${sub === v ? 'activo' : ''}">${t}</button>`).join('')}</div>`;
   return `<div class="pila">${seg}${PROG[sub]()}</div>`;
 };
 const PROG = {};
@@ -737,8 +738,8 @@ PROG.movilidad = () => {
       <div class="card dato"><span class="l">Flexión</span><span class="n">${flex ? fmt(flex.flex) + '°' : '—'}</span><span class="l">${objFlex ? `Para avanzar: ${objFlex}°` : 'Objetivo final: como la sana'}</span></div>
     </div>
     <div class="rejilla-2"><button class="btn" data-accion="nueva-mov">Añadir medida</button><button class="btn claro" data-accion="gonio">Medir con el móvil</button></div>
-    <div class="card"><h3>Extensión</h3><p class="sub">Grados que le faltan para estar recta. 0° = recta; negativo = pasa de recta.</p>${grafLinea([{ nombre: 'Extensión', color: '#0f766e', puntos: S.movilidad.filter(m => m.ext != null).map(m => ({ x: m.fecha, y: m.ext })) }], { objetivo: 0, sufijo: '°', titulo: 'Evolución de la extensión' })}</div>
-    <div class="card"><h3>Flexión</h3>${grafLinea([{ nombre: 'Flexión', color: '#0f766e', puntos: S.movilidad.filter(m => m.flex != null).map(m => ({ x: m.fecha, y: m.flex })) }], { objetivo: objFlex ?? null, sufijo: '°', titulo: 'Evolución de la flexión' })}</div>
+    <div class="card"><h3>Extensión</h3><p class="sub">Grados que le faltan para estar recta. 0° = recta; negativo = pasa de recta.</p>${grafLinea([{ nombre: 'Extensión', color: 'var(--g1)', puntos: S.movilidad.filter(m => m.ext != null).map(m => ({ x: m.fecha, y: m.ext })) }], { objetivo: 0, sufijo: '°', titulo: 'Evolución de la extensión' })}</div>
+    <div class="card"><h3>Flexión</h3>${grafLinea([{ nombre: 'Flexión', color: 'var(--g1)', puntos: S.movilidad.filter(m => m.flex != null).map(m => ({ x: m.fecha, y: m.flex })) }], { objetivo: objFlex ?? null, sufijo: '°', titulo: 'Evolución de la flexión' })}</div>
     ${como('movilidad')}
     <div class="card"><h3>Historial</h3>${hist.length ? `<div class="lista" style="margin-top:6px">${hist.map(m => `<div class="item"><div class="cuerpo"><b>${fLarga(m.fecha)}</b><div class="sub">Extensión ${fmtExt(m.ext)} · Flexión ${m.flex != null ? fmt(m.flex) + '°' : '—'}${m.metodo === 'movil' ? ' · con el móvil' : ''}${m.nota ? ' · ' + esc(m.nota) : ''}</div></div><button class="borrar" data-accion="borrar" data-lista="movilidad" data-id="${m.id}" aria-label="Borrar">✕</button></div>`).join('')}</div>` : '<div class="vacio">Sin medidas</div>'}</div>`;
 };
@@ -750,7 +751,7 @@ function difMuslo(p, pos) {
 PROG.hinchazon = () => {
   const der = ultimo(S.derrame), per = S.perimetros;
   const posiciones = S.ajustes.posicionesMuslo;
-  const colores = ['#0f766e', '#0ea5e9', '#a855f7'];
+  const colores = ['var(--g1)', 'var(--g2)', 'var(--g3)'];
   const rod = per.filter(p => p.rodilla?.op && p.rodilla?.sana).map(p => ({ x: p.fecha, y: +(p.rodilla.op - p.rodilla.sana).toFixed(1) }));
   return `
     <div class="card pila"><div class="fila entre"><div><h3>Derrame (prueba del barrido)</h3><p class="sub">${der ? `Último: <b>${GRADO_TXT[der.grado]}</b> · ${fLarga(der.fecha)}` : 'Aún no lo has medido'}</p></div><button class="btn peq" data-accion="nuevo-derrame">Añadir</button></div>
@@ -759,7 +760,7 @@ PROG.hinchazon = () => {
     </div>
     ${como('derrame')}
     <div class="card pila"><div class="fila entre"><div><h3>Perímetros</h3><p class="sub">Rodilla (hinchazón) y muslo (músculo) de las dos piernas</p></div><button class="btn peq" data-accion="nuevo-perimetro">Añadir</button></div></div>
-    <div class="card"><h3>Hinchazón de la rodilla</h3><p class="sub">Centímetros de más en la operada respecto a la sana. Lo ideal: 0.</p>${grafLinea([{ nombre: 'Diferencia', color: '#0f766e', puntos: rod }], { objetivo: 0, sufijo: ' cm', titulo: 'Diferencia de perímetro de rodilla' })}</div>
+    <div class="card"><h3>Hinchazón de la rodilla</h3><p class="sub">Centímetros de más en la operada respecto a la sana. Lo ideal: 0.</p>${grafLinea([{ nombre: 'Diferencia', color: 'var(--g1)', puntos: rod }], { objetivo: 0, sufijo: ' cm', titulo: 'Diferencia de perímetro de rodilla' })}</div>
     <div class="card"><h3>Músculo del muslo</h3><p class="sub">Centímetros que le faltan a la operada respecto a la sana. Lo ideal: 0.</p>${grafLinea(posiciones.map((pos, i) => ({ nombre: `${pos} cm sobre la rótula`, color: colores[i % 3], puntos: per.filter(p => p.muslo?.[pos]?.op && p.muslo?.[pos]?.sana).map(p => ({ x: p.fecha, y: +(p.muslo[pos].sana - p.muslo[pos].op).toFixed(1) })) })), { objetivo: 0, sufijo: ' cm', titulo: 'Diferencia de perímetro del muslo' })}</div>
     ${como('perimetro')}
     <div class="card"><h3>Historial</h3>${per.length ? `<div class="lista" style="margin-top:6px">${[...per].reverse().slice(0, 20).map(p => `<div class="item"><div class="cuerpo"><b>${fLarga(p.fecha)}</b><div class="sub">${p.rodilla?.op ? `Rodilla ${fmt(p.rodilla.op, 1)} / ${fmt(p.rodilla.sana, 1)} cm · ` : ''}${Object.entries(p.muslo || {}).filter(([, m]) => m.op).map(([k, m]) => `Muslo ${k}: ${fmt(m.op, 1)} / ${fmt(m.sana, 1)}`).join(' · ')}</div></div><button class="borrar" data-accion="borrar" data-lista="perimetros" data-id="${p.id}" aria-label="Borrar">✕</button></div>`).join('')}</div><p class="sub" style="margin-top:6px">Operada / sana</p>` : '<div class="vacio">Sin medidas</div>'}</div>`;
@@ -775,8 +776,8 @@ PROG.pruebas = () => {
     }
     return `<div class="item"><div class="cuerpo"><b>${esc(d.nombre)}</b><div class="sub">${val}${p ? ' · ' + fCorta(p.fecha) : ''}</div></div>${chip}<button class="btn claro peq" data-accion="nueva-prueba" data-tipo="${t}">Añadir</button></div>`;
   }).join('');
-  const lsiSeries = SALTOS.map((t, i) => ({ nombre: PRUEBAS[t].nombre, color: ['#0f766e', '#0ea5e9', '#a855f7', '#f59e0b'][i], puntos: S.pruebas.filter(p => p.tipo === t).map(p => ({ x: p.fecha, y: Math.round(lsiDe(p)) })).filter(p => !isNaN(p.y)) }));
-  const fuerza = ['cuad', 'isquios'].map((t, i) => ({ nombre: PRUEBAS[t].nombre, color: ['#0f766e', '#a855f7'][i], puntos: S.pruebas.filter(p => p.tipo === t).map(p => ({ x: p.fecha, y: Math.round(lsiDe(p)) })).filter(p => !isNaN(p.y)) }));
+  const lsiSeries = SALTOS.map((t, i) => ({ nombre: PRUEBAS[t].nombre, color: ['var(--g1)', 'var(--g2)', 'var(--g3)', 'var(--g4)'][i], puntos: S.pruebas.filter(p => p.tipo === t).map(p => ({ x: p.fecha, y: Math.round(lsiDe(p)) })).filter(p => !isNaN(p.y)) }));
+  const fuerza = ['cuad', 'isquios'].map((t, i) => ({ nombre: PRUEBAS[t].nombre, color: ['var(--g1)', 'var(--g3)'][i], puntos: S.pruebas.filter(p => p.tipo === t).map(p => ({ x: p.fecha, y: Math.round(lsiDe(p)) })).filter(p => !isNaN(p.y)) }));
   return `
     <div class="card"><p class="sub">El índice de simetría (LSI) compara la pierna operada con la sana: operada ÷ sana × 100. Para volver al deporte se pide un 90 % o más.</p></div>
     <div class="card"><div class="lista">${filas}</div></div>
@@ -808,11 +809,11 @@ PROG.habitos = () => {
   const desde = sumarDias(hoyISO(), -30); const ck = S.checkins.filter(c => c.fecha >= desde);
   const serie = (campo, nombre, color) => ({ nombre, color, puntos: ck.filter(c => c[campo] != null && c[campo] !== '').map(c => ({ x: c.fecha, y: c[campo] })) });
   return `
-    <div class="card"><h3>Dolor (últimos 30 días)</h3>${grafLinea([serie('dolorReposo', 'En reposo', '#94a3b8'), serie('dolorActividad', 'Al moverte', '#dc2626')], { min: 0, max: 10, titulo: 'Dolor', vacio: 'Haz el chequeo diario para ver tu evolución' })}</div>
-    <div class="card"><h3>Confianza en la rodilla</h3>${grafLinea([serie('confianza', 'Confianza', '#0f766e')], { min: 0, max: 10, titulo: 'Confianza' })}</div>
-    <div class="card"><h3>Sueño</h3>${grafLinea([serie('sueno', 'Horas', '#6366f1')], { sufijo: ' h', titulo: 'Horas de sueño', min: 0 })}</div>
-    <div class="card"><h3>Agua</h3>${grafLinea([serie('agua', 'Vasos', '#0ea5e9')], { titulo: 'Vasos de agua', min: 0 })}</div>
-    <div class="card"><h3>Pasos</h3>${grafLinea([serie('pasos', 'Pasos', '#f59e0b')], { titulo: 'Pasos al día', margen: 200, min: 0 })}</div>
+    <div class="card"><h3>Dolor (últimos 30 días)</h3>${grafLinea([serie('dolorReposo', 'En reposo', 'var(--g6)'), serie('dolorActividad', 'Al moverte', 'var(--g7)')], { min: 0, max: 10, titulo: 'Dolor', vacio: 'Haz el chequeo diario para ver tu evolución' })}</div>
+    <div class="card"><h3>Confianza en la rodilla</h3>${grafLinea([serie('confianza', 'Confianza', 'var(--g1)')], { min: 0, max: 10, titulo: 'Confianza' })}</div>
+    <div class="card"><h3>Sueño</h3>${grafLinea([serie('sueno', 'Horas', 'var(--g5)')], { sufijo: ' h', titulo: 'Horas de sueño', min: 0 })}</div>
+    <div class="card"><h3>Agua</h3>${grafLinea([serie('agua', 'Vasos', 'var(--g2)')], { titulo: 'Vasos de agua', min: 0 })}</div>
+    <div class="card"><h3>Pasos</h3>${grafLinea([serie('pasos', 'Pasos', 'var(--g4)')], { titulo: 'Pasos al día', margen: 200, min: 0 })}</div>
     <div class="card"><div class="fila entre"><h3>Tus chequeos</h3><button class="btn claro peq" data-accion="checkin-otro-dia">Otro día</button></div><p class="sub">Toca uno para corregirlo.</p>
       ${S.checkins.length ? `<div class="lista" style="margin-top:6px">${[...S.checkins].reverse().slice(0, 40).map(c => `<div class="item"><div class="cuerpo pulsable" data-accion="abrir-checkin" data-fecha="${c.fecha}" style="cursor:pointer"><b>${fLarga(c.fecha)}</b><div class="sub">Dolor ${c.dolorActividad ?? '—'}/10 · hinchazón ${(TXT.hinchazon[c.hinchazon] || '—').toLowerCase()}${(c.mecanico || []).length ? ' · ' + c.mecanico.map(m => TXT.mecanico[m].toLowerCase()).join(', ') : ''}${c.notas ? ' · ' + esc(c.notas) : ''}</div></div><button class="borrar" data-accion="borrar-checkin" data-fecha="${c.fecha}" aria-label="Borrar">✕</button></div>`).join('')}</div>` : '<div class="vacio">Sin chequeos</div>'}</div>`;
 };
@@ -836,7 +837,7 @@ VISTAS.aprender = () => {
   return `<div class="pila">
     <div class="saludo"><h1>Aprender</h1><p>Entender lo que le pasa a tu rodilla ayuda a no agobiarse y a no pasarse.</p></div>
     <div class="card alerta pulsable" data-ir="alarma"><div class="fila entre"><div><h3>Señales de alarma</h3><p>Cuándo llamar al cirujano o ir a urgencias</p></div><span>›</span></div></div>
-    ${grupos.map(g => `<div class="titulo-seccion"><h2>${esc(g)}</h2></div><div class="card"><div class="lista">${ARTICULOS.filter(a => a.grupo === g).map(a => `<div class="item pulsable" data-ir="articulo/${a.id}" style="cursor:pointer"><div class="cuerpo"><b>${esc(a.titulo)}</b>${(a.fases || []).includes(f.id) ? ' <span class="chip acento">Tu fase</span>' : ''}<div class="sub">${esc(a.resumen || '')}</div></div>${S.leidos[a.id] ? '<span class="chip ok">Leído</span>' : '<span style="color:var(--muted)">›</span>'}</div>`).join('')}</div></div>`).join('')}
+    ${grupos.map(g => `<div class="titulo-seccion"><h2>${esc(g)}</h2></div><div class="card"><div class="lista">${ARTICULOS.filter(a => a.grupo === g).map(a => `<div class="item pulsable" data-ir="articulo-${a.id}" style="cursor:pointer"><div class="cuerpo"><b>${esc(a.titulo)}</b>${(a.fases || []).includes(f.id) ? ' <span class="chip acento">Tu fase</span>' : ''}<div class="sub">${esc(a.resumen || '')}</div></div>${S.leidos[a.id] ? '<span class="chip ok">Leído</span>' : '<span style="color:var(--muted)">›</span>'}</div>`).join('')}</div></div>`).join('')}
     <div class="titulo-seccion"><h2>De dónde sale todo esto</h2></div>
     <div class="card"><p class="sub">Las fases, los criterios y los ejercicios salen de guías clínicas públicas. Los textos están escritos para esta app.</p><ul style="margin:8px 0 0;padding-left:20px">${Object.values(P.fuentes).map(x => `<li style="margin-top:4px">${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.nombre)}</a>` : esc(x.nombre)}</li>`).join('')}</ul></div>
   </div>`;
@@ -922,7 +923,22 @@ function abrirHoja(html) {
   const h = $('#hoja'); h.innerHTML = `<div class="panel" role="dialog" aria-modal="true"><div class="asa"></div>${html}</div>`;
   h.hidden = false; document.body.style.overflow = 'hidden';
 }
-function cerrarHoja() { const h = $('#hoja'); h.hidden = true; h.innerHTML = ''; document.body.style.overflow = ''; pararGonio(); }
+function cerrarHoja() {
+  const h = $('#hoja'); h.hidden = true; h.innerHTML = ''; document.body.style.overflow = ''; pararGonio();
+  if (resolverConfirmar) { const r = resolverConfirmar; resolverConfirmar = null; r(false); }
+}
+/* Confirmación dentro de la app (el visor de Claude no muestra confirm()). */
+let resolverConfirmar = null;
+function confirmar(texto, si = 'Sí, seguir') {
+  return new Promise(res => {
+    if (resolverConfirmar) resolverConfirmar(false);
+    abrirHoja(`<div class="pila"><h2 style="margin-top:6px;text-wrap:balance">${esc(texto)}</h2><div class="rejilla-2"><button class="btn borde" data-accion="conf-no">Cancelar</button><button class="btn peligro" data-accion="conf-si">${esc(si)}</button></div></div>`);
+    resolverConfirmar = res;
+  });
+}
+/* Dentro del visor de Claude (un marco) no se puede imprimir ni descargar archivos. */
+const EMBEBIDA = (() => { try { return window.self !== window.top; } catch (e) { return true; } })();
+const avisoEmbebida = () => avisar('En esta vista de prueba no se pueden descargar ni imprimir archivos. Hazlo desde la app del PC.');
 
 function hojaCheckin(fecha = hoyISO()) {
   const c = checkinDe(fecha) || {}; const prev = ultimo(S.checkins) || {};
@@ -1048,6 +1064,8 @@ function pararGonio() { if (gon) { window.removeEventListener('devicemotion', on
 /* ---------- Acciones ---------- */
 const ACC = {};
 ACC.cerrar = () => cerrarHoja();
+ACC['conf-si'] = () => { const r = resolverConfirmar; resolverConfirmar = null; cerrarHoja(); r?.(true); };
+ACC['conf-no'] = () => cerrarHoja();
 ACC['guardar-perfil'] = () => {
   const sit = leerOpcion('situacion'), rodilla = leerOpcion('rodilla');
   if (!rodilla) return avisar('Elige qué rodilla');
@@ -1076,8 +1094,8 @@ ACC['guardar-checkin'] = () => {
 };
 ACC['checkin-otro-dia'] = () => abrirHoja(`${cabHoja('Chequeo de otro día')}<div class="pila"><div class="card pila">${campoFecha('ck-otro', sumarDias(hoyISO(), -1))}</div><button class="btn ancho" data-accion="checkin-fecha">Seguir</button></div>`);
 ACC['checkin-fecha'] = () => { const f = $('#ck-otro').value; hojaCheckin(fechaValida(f) && f <= hoyISO() ? f : hoyISO()); };
-ACC['borrar-checkin'] = el => {
-  if (!confirm(`¿Borrar el chequeo del ${fLarga(el.dataset.fecha)}?`)) return;
+ACC['borrar-checkin'] = async el => {
+  if (!(await confirmar(`¿Borrar el chequeo del ${fLarga(el.dataset.fecha)}?`))) return;
   S.checkins = S.checkins.filter(x => x.fecha !== el.dataset.fecha); guardar(); pintar(true);
 };
 ACC['seg-sesion'] = el => { UI.segSesion = el.dataset.v; pintar(true); };
@@ -1091,7 +1109,7 @@ ACC['guardar-ejercicio'] = () => {
   S.misEjercicios.push({ id: 'mio-' + uid(), nombre, series: s, reps: r, seg, desc: leerTxt('ej-d'), dosis: `${s} × ${r || ''}${seg ? ` · aguanta ${seg} s` : ''}`.replace(' × ·', ' ·') });
   guardar(); cerrarHoja(); avisar('Añadido a tu sesión'); pintar(true);
 };
-ACC['borrar-mio'] = el => { if (!confirm('¿Borrar este ejercicio?')) return; S.misEjercicios = S.misEjercicios.filter(e => e.id !== el.dataset.id); guardar(); pintar(true); };
+ACC['borrar-mio'] = async el => { if (!(await confirmar('¿Borrar este ejercicio?'))) return; S.misEjercicios = S.misEjercicios.filter(e => e.id !== el.dataset.id); guardar(); pintar(true); };
 ACC['empezar-sesion'] = el => {
   const tipo = el.dataset.tipo;
   /* Si había una sesión a medias del mismo tipo se sigue (aunque haya pasado la medianoche); se queda con su fecha. */
@@ -1131,17 +1149,17 @@ ACC.manual = el => {
   if (S.manuales[k]) delete S.manuales[k]; else S.manuales[k] = hoyISO();
   guardar(); pintar(true);
 };
-ACC.avanzar = el => {
+ACC.avanzar = async el => {
   const f = faseActual(), sig = siguienteFase(); if (!sig) return;
-  if (el.dataset.forzar && !confirm(`¿Pasar a «${sig.nombre}» aunque no cumplas todos los criterios?`)) return;
+  if (el.dataset.forzar && !(await confirmar(`¿Pasar a «${sig.nombre}» aunque no cumplas todos los criterios?`))) return;
   const ef = estadoFase(f);
   S.evaluaciones.push({ fecha: hoyISO(), de: f.id, a: sig.id, cumplidos: ef.ok, total: ef.total, forzado: !!el.dataset.forzar });
   S.perfil.faseId = sig.id; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; guardar();
   avisar(`Ahora estás en ${sig.nombre}`); ir('hoy');
 };
-ACC.retroceder = () => {
+ACC.retroceder = async () => {
   const r = ruta(), i = r.indexOf(faseActual().id); if (i <= 0) return;
-  if (!confirm(`¿Volver a «${P.fases[r[i - 1]].nombre}»?`)) return;
+  if (!(await confirmar(`¿Volver a «${P.fases[r[i - 1]].nombre}»?`))) return;
   S.perfil.faseId = r[i - 1]; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; guardar(); ir('hoy');
 };
 ACC['fase-manual'] = () => { const v = $('#aj-fase').value; if (v === S.perfil.faseId) return; S.perfil.faseId = v; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; guardar(); avisar('Fase cambiada'); };
@@ -1184,8 +1202,8 @@ ACC['guardar-carrera'] = () => {
   insertar(S.carreras, { id: uid(), fecha: $('#ca-f').value || hoyISO(), km, min: leerNum('ca-min'), tipo: leerOpcion('ca-t'), dolor: leerNum('ca-d'), nota: leerTxt('ca-n') });
   cerrarHoja(); avisar('Carrera guardada'); pintar(true);
 };
-ACC.borrar = el => {
-  if (!confirm('¿Borrar este registro?')) return;
+ACC.borrar = async el => {
+  if (!(await confirmar('¿Borrar este registro?'))) return;
   S[el.dataset.lista] = S[el.dataset.lista].filter(x => x.id !== el.dataset.id); guardar(); pintar(true);
 };
 ACC['sel-foto'] = el => {
@@ -1194,7 +1212,7 @@ ACC['sel-foto'] = el => {
 };
 ACC['limpiar-sel'] = () => { UI.fotosSel = []; pintar(true); };
 ACC['borrar-foto'] = async el => {
-  if (!confirm('¿Borrar esta foto?')) return;
+  if (!(await confirmar('¿Borrar esta foto?'))) return;
   await FotosDB.del(el.dataset.id); fotoAlServidor(el.dataset.id, null, true);
   S.fotos = S.fotos.filter(f => f.id !== el.dataset.id); UI.fotosSel = []; guardar(); pintar(true);
 };
@@ -1204,6 +1222,7 @@ ACC['guardar-pos'] = () => {
   S.ajustes.posicionesMuslo = [...new Set(v)].slice(0, 3); guardar(); avisar('Guardado');
 };
 ACC.recordatorio = async () => {
+  if (EMBEBIDA) return avisoEmbebida();
   const [hh, mm] = ($('#aj-hora').value || '20:00').split(':'); const d = sumarDias(hoyISO(), 1).replace(/-/g, '');
   const fin = `${z2((+hh + (+mm + 15 >= 60 ? 1 : 0)) % 24)}${z2((+mm + 15) % 60)}`;
   const ahora = new Date().toISOString().replace(/[-:]/g, '').replace(/\.\d+/, '');
@@ -1211,19 +1230,21 @@ ACC.recordatorio = async () => {
   await compartirArchivo(new Blob([ics], { type: 'text/calendar' }), 'recordatorio-rodilla.ics');
 };
 ACC.exportar = async el => {
+  if (EMBEBIDA) return avisoEmbebida();
   const datos = JSON.parse(JSON.stringify(S)); datos.sesionActual = null; datos.exportado = new Date().toISOString();
   if (el.dataset.fotos) { datos.fotosDatos = {}; for (const f of S.fotos) { const b = await FotosDB.get(f.id); if (b) datos.fotosDatos[f.id] = await blobADataURL(b); } }
   await compartirArchivo(new Blob([JSON.stringify(datos)], { type: 'application/json' }), `mi-rodilla-${hoyISO()}.json`);
   S.ultimaCopia = hoyISO(); guardar();
 };
 ACC['borrar-todo'] = async () => {
-  if (!confirm('Se borrarán todos tus datos de este dispositivo. ¿Seguro?')) return;
-  if (!confirm('Última confirmación: no se puede deshacer si no tienes copia.')) return;
-  localStorage.removeItem(CLAVE); await FotosDB.clear().catch(() => {}); S = estadoVacio();
+  if (!(await confirmar('Se borrarán todos tus datos de este dispositivo. ¿Seguro?'))) return;
+  if (!(await confirmar('Última confirmación: no se puede deshacer si no tienes copia.'))) return;
+  try { localStorage.removeItem(CLAVE); } catch (e) { /* nada que borrar */ }
+  await FotosDB.clear().catch(() => {}); S = estadoVacio();
   if (UI.servidor) guardar(); /* el PC guarda copias diarias en datos/copias por si acaso */
   ir('bienvenida');
 };
-ACC.imprimir = () => window.print();
+ACC.imprimir = () => EMBEBIDA ? avisoEmbebida() : window.print();
 ACC['compartir-informe'] = async () => {
   const t = textoInforme();
   if (navigator.share) { try { await navigator.share({ title: 'Informe de rehabilitación', text: t }); return; } catch (e) { if (e.name === 'AbortError') return; } }
@@ -1261,7 +1282,7 @@ document.addEventListener('change', async e => {
     try {
       const datos = JSON.parse(await e.target.files[0].text());
       if (!('perfil' in datos) || !Array.isArray(datos.checkins)) throw new Error('formato');
-      if (!confirm(`Copia del ${datos.exportado ? fLarga(datos.exportado.slice(0, 10)) : 'archivo'}. Sustituirá los datos actuales. ¿Seguir?`)) return;
+      if (!(await confirmar(`Copia del ${datos.exportado ? fLarga(datos.exportado.slice(0, 10)) : 'archivo'}. Sustituirá los datos actuales. ¿Seguir?`))) return;
       const fotos = datos.fotosDatos || {}; delete datos.fotosDatos;
       try { localStorage.setItem(CLAVE + '.antes-de-importar', JSON.stringify(S)); } catch (e2) { /* sin espacio: se sigue */ }
       for (const [id, durl] of Object.entries(fotos)) { const b = await (await fetch(durl)).blob(); await FotosDB.put(id, b); fotoAlServidor(id, b); }
@@ -1291,7 +1312,10 @@ const NAV = { hoy: 'hoy', evaluar: 'hoy', alarma: 'hoy', sesion: 'sesion', guiad
 function ir(destino) { if (location.hash === '#' + destino) pintar(); else location.hash = destino; }
 function pintar(mantenerScroll = false) {
   const h = decodeURIComponent(location.hash.replace(/^#/, '')) || 'hoy';
-  let [r, sub] = h.split('/');
+  /* Rutas tipo «progreso-movilidad»: el visor de Claude solo admite #nombre sencillo, sin barras. */
+  const guion = h.indexOf('-');
+  let r = guion < 0 ? h : h.slice(0, guion);
+  const sub = guion < 0 ? undefined : h.slice(guion + 1);
   if (!S.perfil && r !== 'bienvenida') r = 'bienvenida';
   if (!VISTAS[r]) r = 'hoy';
   const y = window.scrollY;
