@@ -1,6 +1,6 @@
 /* Funcionamiento sin conexión: primero la red (para tener siempre la última versión) y, si no hay, la copia guardada. */
-const CACHE = 'mi-rodilla-v4'; /* el prefijo es interno (nombre antiguo de la app); solo se sube el número */
-const ARCHIVOS = ['./', './index.html', './estilos.css', './app.js', './protocolo.js', './aprender.js', './manifest.webmanifest', './iconos/icono-192.png', './iconos/icono-180.png', './iconos/icono-512.png'];
+const CACHE = 'mi-rodilla-v5'; /* el prefijo es interno (nombre antiguo de la app); solo se sube el número */
+const ARCHIVOS = ['./', './index.html', './estilos.css', './app.js', './protocolo.js', './aprender.js', './manifest.webmanifest', './iconos/icono-192.png', './iconos/icono-180.png', './iconos/icono-512.png', './iconos/icono-512-maskable.png', './iconos/logo.svg'];
 
 self.addEventListener('install', e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(ARCHIVOS)).then(() => self.skipWaiting()));

@@ -15,7 +15,8 @@
 <meta name="apple-mobile-web-app-title" content="Rochilla">
 <meta name="format-detection" content="telephone=no">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="iconos/icono-192.png" type="image/png">
+<link rel="icon" href="iconos/logo.svg" type="image/svg+xml">
+<link rel="icon" href="iconos/icono-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" href="iconos/icono-180.png">
 <link rel="stylesheet" href="estilos.css">
 </head>
@@ -28,7 +29,7 @@
       </button>
     </div>
     <div class="top-centro" aria-hidden="true">
-      <span class="top-marca">Rochilla</span>
+      <span class="top-marca"><svg class="marca-mini" viewBox="0 0 100 100" aria-hidden="true"><path class="pierna" d="M29.04 6.64 39.22 10.57 43.94 12.5 48.29 14.36 53.61 16.76 64.53 21.87 70.22 24.68 69.28 25.26 68.39 25.91 67.56 26.63 66.53 27.69 65.85 28.55 65.04 29.77 64.52 30.74 63.95 32.1 63.62 33.15 63.37 34.22 63.21 35.31 63.13 36.78 63.17 37.88 63.29 38.98 63.51 40.06 63.93 41.47 64.49 42.82 52.67 40.53 42.91 38.74 40.04 38.14 37.19 37.46 34.39 36.68 31.28 35.66 19.65 31.28 18.23 30.54 17.57 30.09 16.33 29.06 15.24 27.84 14.76 27.18 13.92 25.74 13.27 24.18 13.02 23.36 12.67 21.67 12.57 20.8 12.53 19.05 12.71 17.29 12.87 16.41 13.36 14.7 13.66 13.92 14.4 12.43 14.83 11.72 15.84 10.39 16.99 9.21 18.28 8.19 18.97 7.75 20.42 7 21.18 6.7 22.73 6.26 24.32 6.03 25.13 6 26.72 6.1 27.51 6.23Z"/><path class="pierna" d="M81.69 50.07 77.45 58.56 73.73 65.68 69.69 72.69 69.25 73.82 69.06 74.83 69.03 75.66 69.09 76.28 69.38 77.53 69.7 78.32 70.02 78.89 70.81 79.95 71.81 80.85 79.09 86.08 81.5 88.43 82.89 89.55 83.21 89.94 83.45 90.39 83.6 90.88 83.65 91.39 83.6 91.9 83.45 92.39 83.21 92.84 82.89 93.24 82.35 93.65 81.88 93.86 81.21 93.99 80.53 93.95 78.71 93.26 76.92 92.74 75.46 92.36 68.96 89.85 67.28 89.14 66.35 88.65 65.45 88.09 64.59 87.46 63.78 86.78 63.01 86.04 61.96 84.83 61.33 83.96 60.76 83.05 60.25 82.11 59.61 80.63 59.27 79.61 58.91 78.03 58.73 76.43 58.7 74.83 58.77 73.76 58.98 72.18 59.31 70.61 59.84 68.72 60.17 67.3 60.42 65.85 60.56 64.74 60.67 61.7 60.41 57.37 60.38 55.81 60.74 51.7 61.19 48.78 61.53 47.36 61.85 46.32 62.12 45.65 62.6 44.67 64.16 42.09 64.62 43.09 65.35 44.36 65.98 45.26 66.93 46.38 67.72 47.14 68.86 48.07 70.09 48.87 71.4 49.53 72.77 50.05 73.83 50.35 74.91 50.56 76.37 50.71 77.47 50.72 78.57 50.64 80.02 50.4 81.78 49.89Z"/><circle class="rodilla" cx="77.04" cy="36.81" r="10.44"/></svg>Rochilla</span>
       <span class="top-titulo" id="titulo">Rochilla</span>
     </div>
     <div class="top-der">
@@ -44,6 +45,28 @@
     <button type="button" data-ir="progreso"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17l5-5 4 4 8-8"/><path d="M15 8h5v5"/></svg><span>Progreso</span></button>
     <button type="button" data-ir="aprender"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/></svg><span>Aprender</span></button>
   </nav>
+</div>
+<!-- Pantalla de carga: sale cada vez que se abre la app. app.js pone el nombre y la etapa, y «Empezar» entra. -->
+<div id="portada" class="portada" role="dialog" aria-modal="true" aria-labelledby="portada-nombre" aria-describedby="portada-saludo portada-frase" tabindex="-1">
+  <div class="portada-cuerpo">
+    <div class="portada-marca" aria-hidden="true"><div class="portada-icono">
+      <svg viewBox="0 0 100 100">
+        <circle class="p-pulso" cx="77.04" cy="36.81" r="10.44"/>
+        <g class="p-muslo">
+          <path class="pierna" d="M29.04 6.64 39.22 10.57 43.94 12.5 48.29 14.36 53.61 16.76 64.53 21.87 70.22 24.68 69.28 25.26 68.39 25.91 67.56 26.63 66.53 27.69 65.85 28.55 65.04 29.77 64.52 30.74 63.95 32.1 63.62 33.15 63.37 34.22 63.21 35.31 63.13 36.78 63.17 37.88 63.29 38.98 63.51 40.06 63.93 41.47 64.49 42.82 52.67 40.53 42.91 38.74 40.04 38.14 37.19 37.46 34.39 36.68 31.28 35.66 19.65 31.28 18.23 30.54 17.57 30.09 16.33 29.06 15.24 27.84 14.76 27.18 13.92 25.74 13.27 24.18 13.02 23.36 12.67 21.67 12.57 20.8 12.53 19.05 12.71 17.29 12.87 16.41 13.36 14.7 13.66 13.92 14.4 12.43 14.83 11.72 15.84 10.39 16.99 9.21 18.28 8.19 18.97 7.75 20.42 7 21.18 6.7 22.73 6.26 24.32 6.03 25.13 6 26.72 6.1 27.51 6.23Z"/>
+          <g class="p-tibia"><path class="pierna" d="M81.69 50.07 77.45 58.56 73.73 65.68 69.69 72.69 69.25 73.82 69.06 74.83 69.03 75.66 69.09 76.28 69.38 77.53 69.7 78.32 70.02 78.89 70.81 79.95 71.81 80.85 79.09 86.08 81.5 88.43 82.89 89.55 83.21 89.94 83.45 90.39 83.6 90.88 83.65 91.39 83.6 91.9 83.45 92.39 83.21 92.84 82.89 93.24 82.35 93.65 81.88 93.86 81.21 93.99 80.53 93.95 78.71 93.26 76.92 92.74 75.46 92.36 68.96 89.85 67.28 89.14 66.35 88.65 65.45 88.09 64.59 87.46 63.78 86.78 63.01 86.04 61.96 84.83 61.33 83.96 60.76 83.05 60.25 82.11 59.61 80.63 59.27 79.61 58.91 78.03 58.73 76.43 58.7 74.83 58.77 73.76 58.98 72.18 59.31 70.61 59.84 68.72 60.17 67.3 60.42 65.85 60.56 64.74 60.67 61.7 60.41 57.37 60.38 55.81 60.74 51.7 61.19 48.78 61.53 47.36 61.85 46.32 62.12 45.65 62.6 44.67 64.16 42.09 64.62 43.09 65.35 44.36 65.98 45.26 66.93 46.38 67.72 47.14 68.86 48.07 70.09 48.87 71.4 49.53 72.77 50.05 73.83 50.35 74.91 50.56 76.37 50.71 77.47 50.72 78.57 50.64 80.02 50.4 81.78 49.89Z"/></g>
+          <circle class="rodilla" cx="77.04" cy="36.81" r="10.44"/>
+        </g>
+      </svg>
+    </div></div>
+    <h1 class="portada-nombre aparece" id="portada-nombre">Rochilla</h1>
+    <p class="portada-saludo aparece" id="portada-saludo">Bienvenida</p>
+    <p class="portada-frase aparece" id="portada-frase">Ya queda menos para que puedas volver a correr.</p>
+  </div>
+  <div class="portada-pie aparece">
+    <button type="button" class="btn portada-btn" id="portada-empezar" data-accion="empezar">Empezar</button>
+    <p class="portada-etapa" id="portada-etapa" hidden></p>
+  </div>
 </div>
 <div id="hoja" class="hoja" hidden></div>
 <div id="aviso" class="aviso" role="status" aria-live="polite"></div>

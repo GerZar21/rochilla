@@ -497,7 +497,7 @@ VISTAS.bienvenida = () => {
   return `<div class="pila">
     <div class="saludo"><h1>${S.perfil ? 'Tu perfil' : 'Vamos a montar tu plan'}</h1><p>Con esto la app sabe en qué fase estás y qué ejercicios te tocan. Puedes cambiarlo cuando quieras.</p></div>
     <div class="card pila" id="form-perfil">
-      <div class="campo"><label for="f-nombre">¿Cómo te llamas?</label><input id="f-nombre" type="text" value="${esc(p.nombre || '')}" autocomplete="given-name"></div>
+      <div class="campo"><label for="f-nombre">¿Cómo te llamas?</label><input id="f-nombre" type="text" value="${esc(p.nombre || (S.perfil ? '' : nombreInvitado()))}" autocomplete="given-name"></div>
       <div class="campo"><span class="etq">¿Qué rodilla?</span>${opciones('rodilla', [['izquierda', 'Izquierda'], ['derecha', 'Derecha']], p.rodilla, true)}</div>
       <div class="campo"><span class="etq">¿Qué ligamento?</span>${opciones('ligamento', Object.entries({ lca: 'Anterior (LCA)', lcp: 'Posterior (LCP)', ambos: 'Los dos' }), p.ligamento || 'lca', true)}</div>
       <div class="campo"><span class="etq">¿Algo más?</span><span class="ayuda">Si lo sabes. Cambia alguna pauta.</span>${opciones('extras', Object.entries(TXT.extras), p.extras || [], false, true)}</div>
@@ -1529,9 +1529,60 @@ document.addEventListener('click', async e => {
 document.addEventListener('input', e => { if (e.target.matches('input[type=range][data-salida]')) $('#' + e.target.dataset.salida).textContent = e.target.value; });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && !$('#hoja').hidden) cerrarHoja(); });
 
+/* ---------- Portada (pantalla de carga) ----------
+   Sale cada vez que se abre la app, por encima de todo (está en index.html para verse desde el primer instante).
+   Saluda con el nombre del perfil (o el del enlace de invitación), enseña la etapa si ya hay plan, y «Empezar» entra:
+   al formulario si no hay perfil y a Hoy si lo hay. Mientras está, la app de detrás queda inerte
+   y los avisos esperan a que se cierre. No usa rutas propias: es una capa, no una pantalla. */
+const PORTADA = { pendientes: [] };
+/* El nombre de quien la usa no va en el código (el repositorio es público): llega en el enlace de invitación
+   (…/?para=Nombre), se recuerda en este dispositivo y rellena el saludo y el formulario inicial. */
+function nombreInvitado() {
+  let n = '';
+  try { n = (new URLSearchParams(location.search).get('para') || '').trim().slice(0, 40); } catch (e) { /* sin parámetros */ }
+  try {
+    if (n) localStorage.setItem(CLAVE + '.para', n);
+    else n = localStorage.getItem(CLAVE + '.para') || '';
+  } catch (e) { /* sin almacenamiento */ }
+  return n || String(window.NOMBRE_PREDETERMINADO || '');
+}
+const portadaAbierta = () => { const el = $('#portada'); return !!el && !el.classList.contains('saliendo'); };
+function pintarPortada() {
+  if (!$('#portada')) return;
+  const nombre = String(S.perfil?.nombre || '').trim() || nombreInvitado();
+  $('#portada-saludo').textContent = nombre ? `Bienvenida, ${nombre}` : 'Bienvenida';
+  const etq = $('#portada-etapa'), f = S.perfil ? faseActual() : null;
+  if (f) {
+    const r = ruta(), i = r.indexOf(f.id);
+    etq.textContent = i >= 0 ? `${S.perfil.situacion === 'pendiente' ? 'Etapa' : 'Fase'} ${i + 1} de ${r.length} · ${f.nombre}` : f.nombre;
+  }
+  etq.hidden = !f;
+}
+function abrirPortada() {
+  const el = $('#portada'); if (!el) return;
+  pintarPortada();
+  $('#app').inert = true;
+  try { el.focus({ preventScroll: true }); } catch (e) { /* sin foco */ }
+}
+function avisarTrasPortada(t) { if (portadaAbierta()) PORTADA.pendientes.push(t); else avisar(t); }
+ACC.empezar = () => {
+  const el = $('#portada'); if (!el || el.classList.contains('saliendo')) return;
+  const destino = S.perfil ? 'hoy' : 'bienvenida', yaEstaba = location.hash === '#' + destino;
+  ir(destino, 'raiz');
+  if (yaEstaba) animarEntrada('tab');
+  /* Se funde y deja ver la app; hasta que desaparece del todo sigue recogiendo los toques (un doble toque no cae detrás) */
+  el.classList.add('saliendo');
+  setTimeout(() => {
+    el.remove(); $('#app').inert = false;
+    try { $('#vista').focus({ preventScroll: true }); } catch (e) { /* sin foco */ }
+    PORTADA.pendientes.splice(0).forEach(t => avisar(t));
+  }, 300);
+};
+
 /* ---------- Arranque ---------- */
 if (navigator.storage?.persist) navigator.storage.persist().catch(() => {});
 if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
 pintar();
-if (aviso0) avisar(aviso0);
-conectarServidor().then(cambiado => { if (cambiado) { pintar(); avisar('Datos cargados del PC'); } });
+abrirPortada();
+if (aviso0) avisarTrasPortada(aviso0);
+conectarServidor().then(cambiado => { if (cambiado) { pintar(); pintarPortada(); avisarTrasPortada('Datos cargados del PC'); } });

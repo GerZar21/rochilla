@@ -29,6 +29,8 @@ No sustituye al cirujano ni al fisio: si dicen algo distinto, manda lo que digan
 
 **En el móvil**: la carpeta `app/` se publica sola en GitHub Pages cada vez que se suben cambios (`.github/workflows/pages.yml`). Desde el iPhone: abrir la dirección en Safari → Compartir → «Añadir a pantalla de inicio». Funciona también sin conexión.
 
+**Enlace de invitación**: el nombre de quien la usa no está en el código (el repositorio es público). Se pasa en el enlace, `…/rochilla/?para=Nombre`, y la app saluda con él, lo pone en el formulario inicial y lo recuerda en ese móvil.
+
 ## Dónde están tus datos
 
 - **En el PC**, en `datos/estado.json` (y las fotos en `datos/fotos/`), con una copia por día en `datos/copias/` (las 60 últimas). No se pierden aunque cambies de navegador o borres su caché. La carpeta `datos/` nunca se sube a GitHub.
