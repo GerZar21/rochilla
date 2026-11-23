@@ -83,6 +83,87 @@
   perturb.meniscoRoto = 'Menisco tocado: sin giros bruscos sobre la pierna apoyada.';
   aterrizaje.meniscoRoto = MR.impacto;
 
+  /* ---------- Técnica, esfuerzo, registro y variantes en casa ----------
+     Pautas generales de ejecución, escritas para la app: no son criterios clínicos ni salen de las guías.
+     Son orientativas y, si tu fisio dice otra cosa, manda lo suyo. */
+  const TECNICA = {
+    ext_pasiva: ['Nada debajo de la rodilla: solo el talón en alto', 'Muslo relajado: deja que la gravedad trabaje', 'Tirantez detrás de la rodilla vale; dolor fuerte, no'],
+    desliz_talon: ['Talón pegado a la cama o al suelo', 'Dobla hasta notar tensión, sin rebotes', 'Vuelve despacio hasta estirar del todo'],
+    cuad_estatico: ['Empuja la parte de atrás de la rodilla hacia abajo', 'Mira que la rótula suba', 'Aguanta sin contener la respiración'],
+    slr: ['Aprieta el muslo antes de levantar', 'Rodilla recta durante toda la subida', 'Sube hasta la altura de la otra rodilla y baja despacio'],
+    rotula: ['Pierna estirada y muslo relajado', 'Movimientos suaves en las cuatro direcciones', 'Para si la rodilla se hincha más'],
+    cadera: ['Tronco quieto, sin girar la cadera', 'Pierna estirada y punta del pie al frente', 'Sube despacio y baja controlando'],
+    talones_sentado: ['Peso repartido en los dos pies', 'Sube del todo y baja despacio'],
+    frio: ['Siempre con un paño entre el frío y la piel', 'Pierna por encima del corazón', 'Quítalo si notas quemazón o la piel muy blanca'],
+    bici: ['Sillín alto al principio: abajo la rodilla casi se estira', 'Resistencia baja y pedaleo redondo', 'Si no da la vuelta, medio pedaleo adelante y atrás'],
+    puente_dos: ['Pies a la anchura de la cadera', 'Sube apretando el glúteo, sin arquear la espalda', 'Baja despacio'],
+    mini_sent: ['Rodillas en la línea de los pies, sin irse hacia dentro', 'Peso en los talones y repartido en las dos piernas', 'Baja poco y controlado'],
+    talones_pie: ['Sube recto, sin echar el peso a los dedos pequeños', 'Arriba un segundo y baja despacio'],
+    equilibrio: ['Rodilla un poco doblada, no bloqueada', 'Cadera nivelada, sin dejarla caer', 'Mira un punto fijo al frente'],
+    step_up: ['Todo el pie en el escalón', 'Rodilla hacia el segundo dedo del pie', 'Sube con la pierna de arriba, sin impulsarte con la de abajo'],
+    prensa: ['Espalda y cadera pegadas al respaldo', 'Rodillas en la línea de los pies', 'Recorrido corto y sin bloquear la rodilla arriba'],
+    ext_corta: ['Solo el tramo de 90° a unos 45°', 'Sube y baja despacio, sin tirones', 'Peso que puedas mover sin dolor delante de la rodilla'],
+    curl_isquios: ['Cadera quieta, sin levantarla', 'Dobla despacio y baja aún más despacio', 'Para si tira de la zona del injerto'],
+    abd_banda: ['Tronco recto, sin inclinarte', 'Pies al frente, sin girar la pierna', 'Banda tensa todo el rato'],
+    bici2: ['Empieza suave los primeros minutos', 'Sube la resistencia poco a poco', 'Rodilla alineada con el pie al pedalear'],
+    sentadilla: ['Rodillas en la línea de los pies', 'Cadera atrás y pecho alto', 'Baja hasta donde controles sin dolor'],
+    prensa_1: ['Empieza por la sana para tener referencia', 'Rodilla alineada con el pie', 'La misma profundidad con las dos piernas'],
+    step_down: ['Pelvis nivelada, sin dejarla caer', 'Rodilla hacia el segundo dedo, no hacia dentro', 'Baja en unos 3 s y toca el suelo con el talón'],
+    zancada: ['Baja en vertical, con el tronco recto', 'Rodilla de delante sobre el pie', 'Empuja con el talón de la pierna de delante'],
+    ext_completa: ['Estira del todo sin dar un golpe', 'Baja en 2-3 s', 'Si duele delante de la rodilla, menos peso'],
+    peso_muerto: ['Espalda recta y mancuernas pegadas a las piernas', 'Rodillas algo dobladas y quietas', 'Lleva la cadera atrás hasta notar el estiramiento'],
+    puente_uno: ['Cadera nivelada al subir', 'Empuja con el talón', 'Baja despacio sin dejar caer la cadera'],
+    talones_uno: ['Sube del todo, unos 2 s cada repetición', 'Rodilla estirada, sin bloquearla', 'La mano en la pared, para el equilibrio y no para empujar'],
+    plancha_lat: ['Cuerpo en línea de la cabeza a los pies', 'Cadera alta, sin dejarla caer', 'Respira con normalidad'],
+    perturbaciones: ['Rodilla un poco doblada y alineada', 'Recupera el equilibrio sin girar la rodilla', 'Empieza con empujones suaves'],
+    core: ['Zona lumbar pegada al suelo', 'Baja brazo y pierna contrarios despacio', 'Suelta el aire al bajar'],
+    pogos: ['Rebotes cortos sobre la parte delantera del pie', 'Rodillas casi estiradas y alineadas', 'Cae suave y en silencio'],
+    aterrizaje: ['Cae sobre la parte delantera del pie y amortigua', 'Rodillas en la línea de los pies', 'Aguanta quieto 2 s'],
+    tijera: ['Tronco recto', 'Cae suave, con las rodillas alineadas', 'Para si pierdes el control'],
+    aterrizaje_1: ['Cae con la rodilla algo doblada', 'Rodilla alineada con el pie', 'Aguanta 3 s sin moverte'],
+    trote: ['Pasos cortos y ligeros', 'Terreno llano', 'Si al día siguiente está peor, repite la sesión'],
+    fuerza_mant: ['Técnica limpia antes que más peso', 'Sube la carga poco a poco', 'Rodillas alineadas en todos los ejercicios'],
+    agilidad: ['Pies rápidos y ligeros', 'Mirada al frente', 'Empieza al 50-75 % de tu velocidad'],
+    lateral: ['Rodillas un poco dobladas y cadera baja', 'De lado, sin cruzar los pies', 'Frena sin que la rodilla se vaya hacia dentro'],
+    ocho: ['Baja el centro de gravedad en las curvas', 'Pasos cortos al girar', 'Sin dolor ni sensación de inestabilidad'],
+    saltos_1: ['Aterriza estable antes del siguiente salto', 'Rodilla alineada con el pie', 'Saltos cortos al principio'],
+    cajon: ['Cajón bajo al principio', 'Cae suave arriba, con las rodillas alineadas', 'Baja andando, no saltando'],
+    fuerza_alta: ['Calienta con series ligeras antes', 'Técnica limpia en cada repetición', 'Descansa 2-3 min entre series'],
+    prevencion: ['Antes de cada entrenamiento', 'Cuida la técnica de los aterrizajes', 'No te lo saltes aunque vayas con prisa'],
+    deporte: ['De menos a más: sin oposición, con oposición controlada y entrenamiento completo', 'Sube un escalón cada vez', 'Para si la rodilla se hincha o falla'],
+    esprint: ['Calienta bien antes', 'Frena en varios pasos, sin bloquear la rodilla', 'Sube la velocidad poco a poco'],
+  };
+  /* Esfuerzo orientativo en los ejercicios de fuerza (RPE de 0 a 10; 10 = no podrías hacer ni una repetición más) */
+  const RPE = {
+    puente_dos: '5-6', mini_sent: '5-6', talones_pie: '6', step_up: '6', prensa: '6-7', ext_corta: '5-6', curl_isquios: '6', abd_banda: '6',
+    sentadilla: '7', prensa_1: '7', step_down: '6-7', zancada: '7', ext_completa: '7', peso_muerto: '7', puente_uno: '7', talones_uno: '7',
+    plancha_lat: '7', core: '6', fuerza_mant: '7-8', fuerza_alta: '8',
+  };
+  /* Sin peso ni repeticiones que apuntar: solo una nota */
+  const SIN_REGISTRO = ['ext_pasiva', 'rotula', 'frio', 'trote', 'prevencion', 'deporte'];
+  /* Variante sin máquinas para entrenar en casa (desde la fase de fuerza y control) */
+  const CASA = {
+    sentadilla: { nombre: 'Sentadilla con mochila o garrafas', desc: 'Con una mochila cargada o dos garrafas de agua. Baja controlado con las rodillas alineadas sobre los pies.' },
+    prensa_1: { nombre: 'Levantarse de una silla a una pierna', desc: 'Siéntate y levántate de una silla firme solo con la pierna operada, bajando despacio. Si cuesta, usa una silla más alta.', tecnica: ['Brazos cruzados o al frente', 'Rodilla alineada con el pie', 'Baja en 2-3 s, sin dejarte caer'] },
+    ext_completa: { nombre: 'Extensión de rodilla sentado con banda o tobillera', desc: 'Sentado en una silla alta, con una banda o un peso en el tobillo, estira la rodilla del todo y baja despacio. Con el recorrido que te haya autorizado tu fisio.' },
+    curl_isquios: { nombre: 'Curl de isquios con banda', desc: 'Boca abajo o de pie, con una banda atada a un mueble firme y al tobillo, dobla la rodilla despacio contra la banda.' },
+    bici2: { nombre: 'Andar a paso ligero o subir escaleras', dosis: '15-20 min', desc: 'Aeróbico sin impacto, a un ritmo que te deje hablar.', tecnica: ['Pasos firmes, sin cojear', 'Sube el ritmo poco a poco', 'En las escaleras, rodilla alineada con el pie'] },
+    fuerza_mant: { nombre: 'Fuerza en casa: sentadilla con mochila, silla a una pierna, extensión y curl con banda', desc: 'Mantén la fuerza mientras empiezas a correr y saltar. Si puedes, una sesión por semana en el gimnasio.' },
+    fuerza_alta: { nombre: 'Fuerza en casa: búlgara con peso, peso muerto a una pierna y zancadas', dosis: '4 × 8-10 de cada', desc: 'En casa cuesta llegar a cargas altas: usa mochila o garrafas, baja despacio y acaba cada serie cerca del fallo con buena técnica. Si puedes, una sesión por semana en el gimnasio.' },
+    cajon: { nombre: 'Saltos a un escalón firme', desc: 'Salta con las dos piernas a un escalón bajo y estable, y baja andando.' },
+    agilidad: { nombre: 'Pies rápidos con marcas en el suelo', desc: 'Marca una escalera en el suelo con cinta o calcetines. Pies rápidos, cortos y ligeros, al 50-75 % de tu velocidad.' },
+  };
+
+  /* Calentamiento corto propio, al principio de la sesión desde la fase de fuerza y control */
+  const CALENTAMIENTO = [
+    ej('cal_bici', 'Bici o elíptica suave', '5 min', 1, 'Para que la rodilla entre en calor, con resistencia baja.', { seg: 300, video: 'stationary bike warm up knee', tecnica: ['Resistencia baja', 'Pedaleo redondo y constante'], casa: { nombre: 'Marcha en el sitio o subir y bajar un escalón', dosis: '3-5 min', desc: 'A ritmo suave, con la rodilla alineada con el pie.', tecnica: ['Ritmo suave', 'Rodilla alineada con el pie'] } }),
+    ej('cal_puente', 'Puente de glúteo', '1 × 10', 1, 'Sin peso, para despertar el glúteo antes de cargar.', { video: 'glute bridge', tecnica: ['Sube apretando el glúteo', 'Sin arquear la espalda'] }),
+    ej('cal_lateral', 'Pasos laterales con banda', '2 × 10 pasos por lado', 2, 'Banda alrededor de las rodillas o los tobillos, rodillas algo dobladas. Sin banda también vale.', { video: 'banded lateral walk', tecnica: ['Rodillas un poco dobladas', 'Pies al frente, sin juntarlos del todo'] }),
+    ej('cal_sentadilla', 'Sentadilla sin peso', '1 × 10', 1, 'Hasta donde controles y despacio. Es para preparar, no para cansarte.', { video: 'bodyweight squat technique', tecnica: ['Rodillas en la línea de los pies', 'Baja despacio y sube sin prisa'] }),
+  ];
+  CALENTAMIENTO.forEach(e => { e.rpe = '3-4'; e.cal = true; e.sinRegistro = true; });
+  CALENTAMIENTO[3].meniscoRoto = MR.carga;
+
   const evitarEspera = [
     'Forzar la extensión o la flexión contra un tope duro: un bloqueo del menisco no se vence insistiendo',
     'Agacharte profundo con peso (más de 60-70°) y girar la rodilla con el pie apoyado',
@@ -318,6 +399,68 @@
     },
   };
 
+  /* Desde la fase de fuerza y control (f3) y su equivalente sin operación (c3): calentamiento y opción de casa o gimnasio */
+  ['f3', 'f4', 'f5', 'f6', 'c3'].forEach(id => { fases[id].calentamiento = CALENTAMIENTO; fases[id].casaGimnasio = true; });
+
+  /* ---------- Resto del cuerpo: sesiones cortas ---------- */
+  const fuerzaGeneral = {
+    nombre: 'Resto del cuerpo', sesiones: { porSemana: 3 },
+    nota: 'Para no perder forma mientras la rodilla se recupera. Si algo carga la rodilla operada, sáltatelo.',
+    ejercicios: [
+      ej('fg_flexiones', 'Flexiones', '3 × 10', 3, 'Con las rodillas apoyadas o contra una mesa si aún no puedes apoyar bien la pierna.', { video: 'push ups', rpe: '7', tecnica: ['Cuerpo recto de la cabeza a las rodillas o los pies', 'Codos a unos 45° del cuerpo', 'Baja controlado'] }),
+      ej('fg_remo', 'Remo con banda o mancuerna', '3 × 12', 3, 'Sentado o apoyado en un banco, tira hacia el ombligo juntando las escápulas.', { video: 'seated band row', rpe: '7', tecnica: ['Espalda recta', 'Tira con los codos y junta las escápulas', 'Sin encoger los hombros'] }),
+      ej('fg_press', 'Press de hombros sentado', '3 × 10', 3, 'Con mancuernas, sentado y con la espalda apoyada.', { video: 'seated dumbbell shoulder press', rpe: '7', tecnica: ['Espalda apoyada', 'Sube sin arquear la zona lumbar', 'Baja hasta la altura de las orejas'] }),
+      ej('fg_plancha', 'Plancha', '3 × 30 s', 3, 'Antebrazos y rodillas (o pies) apoyados, cuerpo recto. No la hagas con los pies si molesta la rodilla.', { seg: 30, video: 'forearm plank', rpe: '6-7', tecnica: ['Cuerpo recto, sin hundir la cadera', 'Abdomen apretado', 'Respira con normalidad'] }),
+      ej('fg_bicho', 'Bicho muerto', '3 × 10', 3, 'Boca arriba, baja brazo y pierna contrarios sin arquear la espalda.', { video: 'dead bug exercise', rpe: '6', tecnica: ['Zona lumbar pegada al suelo', 'Movimiento lento', 'Suelta el aire al estirar'] }),
+      ej('fg_sana', 'Pierna sana: prensa o sentadilla a una pierna', '3 × 10', 3, 'Entrenar la pierna sana mantiene su fuerza y puede ayudar un poco a la operada (efecto cruzado).', { video: 'single leg press cross education', rpe: '7-8', tecnica: ['Rodilla alineada con el pie', 'Peso que puedas controlar', 'Recorrido completo y sin prisa'] }),
+      ej('fg_brazos', 'Bici de brazos o remo ergómetro', '10 min', 1, 'Cardio sin la rodilla si tienes la máquina a mano.', { video: 'arm ergometer workout', tecnica: ['Ritmo constante', 'Espalda recta', 'Sube la intensidad poco a poco'] }),
+    ],
+  };
+  /* Biblioteca de sesiones de 10-15 minutos para días sueltos. Mismo formato que fuerzaGeneral. Texto propio. */
+  const sesionesExtra = [
+    { id: 'movilidad', nombre: 'Movilidad', min: 12, nota: 'Espalda, hombros y respiración, para no quedarte rígido mientras la rodilla se recupera.', ejercicios: [
+      ej('x_gato', 'Gato-vaca', '1 × 10', 1, 'A cuatro patas, redondea la espalda y luego húndela despacio, siguiendo la respiración. Con un cojín bajo las rodillas; si apoyar la operada molesta, hazlo de pie con las manos en una mesa.', { video: 'cat cow stretch', tecnica: ['Movimiento lento, de la pelvis a la cabeza', 'Suelta el aire al redondear', 'Sin dolor en la rodilla apoyada'] }),
+      ej('x_libro', 'Libro abierto', '1 × 8 por lado', 2, 'Tumbado de lado con las rodillas dobladas y un cojín entre ellas, abre el brazo de arriba hacia el otro lado siguiendo la mano con la mirada.', { video: 'open book thoracic rotation', tecnica: ['Rodillas juntas y quietas', 'Gira desde la parte alta de la espalda', 'Sin forzar al final'] }),
+      ej('x_palo', 'Hombros con un palo o una toalla', '1 × 10', 1, 'De pie o sentado, con un palo agarrado a lo ancho, sube los brazos estirados por encima de la cabeza y bájalos despacio.', { video: 'shoulder mobility stick', tecnica: ['Brazos estirados', 'Sin arquear la zona lumbar', 'Hasta donde llegues sin dolor'] }),
+      ej('x_pecho', 'Estiramiento de pecho en una puerta', '2 × 30 s', 2, 'Antebrazo apoyado en el marco de una puerta, da un paso corto al frente hasta notar el estiramiento en el pecho.', { seg: 30, video: 'doorway chest stretch', tecnica: ['Hombro relajado, lejos de la oreja', 'Estiramiento suave, sin dolor'] }),
+      ej('x_respira', 'Respiración profunda tumbado', '2 min', 1, 'Boca arriba con las rodillas dobladas o la pierna operada estirada, una mano en la tripa: coge aire por la nariz hinchando la tripa y suéltalo despacio.', { seg: 120, tecnica: ['Suelta el aire más despacio de lo que lo coges', 'Hombros quietos'] }),
+    ] },
+    { id: 'tronco', nombre: 'Tronco y abdomen', min: 12, nota: 'Un tronco fuerte ayuda a controlar la rodilla al saltar y al cambiar de dirección.', ejercicios: [
+      ej('x_bicho', 'Bicho muerto', '3 × 8', 3, 'Boca arriba con brazos y piernas en alto, baja a la vez el brazo y la pierna contrarios sin arquear la espalda.', { video: 'dead bug exercise', rpe: '6', tecnica: ['Zona lumbar pegada al suelo', 'Movimiento lento', 'Suelta el aire al estirar'] }),
+      ej('x_plancha', 'Plancha', '3 × 20-30 s', 3, 'Sobre los antebrazos y las rodillas (o los pies), cuerpo recto.', { seg: 30, video: 'forearm plank', rpe: '6-7', tecnica: ['Cuerpo recto, sin hundir la cadera', 'Abdomen apretado', 'Respira con normalidad'] }),
+      ej('x_perro', 'Pájaro-perro', '3 × 8 por lado', 3, 'A cuatro patas con un cojín bajo las rodillas, estira a la vez un brazo y la pierna contraria. Si apoyar la operada molesta, sáltatelo.', { video: 'bird dog exercise', rpe: '6', tecnica: ['Espalda plana, sin girar la cadera', 'Estira despacio y aguanta 2 s', 'Mirada al suelo'] }),
+      ej('x_pallof', 'Press Pallof con banda', '3 × 10 por lado', 3, 'De pie o sentado, con una banda atada a un lado a la altura del pecho, empuja los brazos al frente sin dejar que el tronco gire.', { video: 'pallof press', rpe: '6-7', tecnica: ['Tronco quieto, sin girar', 'Brazos al frente y vuelta despacio', 'Abdomen apretado'] }),
+      ej('x_lateral', 'Plancha lateral con rodillas', '2 × 20 s por lado', 2, 'Apoyado en el antebrazo y las rodillas, sube la cadera hasta poner el cuerpo recto.', { seg: 20, video: 'side plank from knees', rpe: '6', tecnica: ['Cadera alta', 'Hombro sobre el codo'] }),
+    ] },
+    { id: 'superior', nombre: 'Tren superior', min: 15, nota: 'Brazos, espalda y hombros, sentado o de pie y sin cargar la rodilla.', ejercicios: [
+      ej('x_flexiones', 'Flexiones inclinadas', '3 × 10', 3, 'Manos en una mesa firme o en la pared, cuerpo recto. Cuanto más bajo el apoyo, más difícil.', { video: 'incline push up', rpe: '7', tecnica: ['Cuerpo recto', 'Codos a unos 45° del cuerpo', 'Baja controlado'] }),
+      ej('x_remo', 'Remo con banda', '3 × 12', 3, 'Sentado con las piernas estiradas o de pie con la banda atada a un mueble, tira hacia el ombligo juntando las escápulas.', { video: 'resistance band row', rpe: '7', tecnica: ['Espalda recta', 'Tira con los codos', 'Sin encoger los hombros'] }),
+      ej('x_press', 'Press de hombros sentado', '3 × 10', 3, 'Con mancuernas o botellas, sentado y con la espalda apoyada.', { video: 'seated dumbbell shoulder press', rpe: '7', tecnica: ['Espalda apoyada', 'Sube sin arquear la zona lumbar'] }),
+      ej('x_aperturas', 'Separar la banda delante del pecho', '3 × 15', 3, 'Brazos estirados al frente con una banda entre las manos, sepáralos hasta que la banda toque el pecho.', { video: 'band pull apart', rpe: '6-7', tecnica: ['Hombros abajo', 'Junta las escápulas al final'] }),
+      ej('x_brazos', 'Bíceps y tríceps', '2 × 12 de cada', 2, 'Sentado, con mancuernas o una banda: dobla los codos para el bíceps y luego estíralos por encima de la cabeza para el tríceps.', { video: 'seated biceps curl triceps extension', rpe: '7', tecnica: ['Codos quietos', 'Sube y baja sin balanceo'] }),
+    ] },
+    { id: 'cardio', nombre: 'Cardio sin impacto', min: 15, nota: 'Para el corazón y los pulmones sin saltar ni correr. Si la rodilla aún no tolera la bici, haz solo lo de brazos.', ejercicios: [
+      ej('x_bici', 'Bici estática o elíptica suave', '8 min', 1, 'Solo si tu fase ya la permite. Resistencia baja o media, a un ritmo que te deje hablar.', { seg: 480, video: 'stationary bike workout low impact', tecnica: ['Ritmo que te deje hablar', 'Rodilla alineada con el pie'] }),
+      ej('x_boxeo', 'Boxeo sentado', '6 × 30 s rápido y 30 s suave', 6, 'Sentado con la espalda recta, lanza golpes al aire alternando los brazos: 30 s rápido y 30 s suave.', { seg: 30, video: 'seated boxing workout', tecnica: ['Espalda recta', 'Abdomen apretado', 'Respira al golpear'] }),
+      ej('x_ergo', 'Bici de brazos o remo ergómetro', '5 min', 1, 'Si tienes la máquina a mano. Si no, repite el boxeo sentado.', { seg: 300, video: 'arm ergometer workout', tecnica: ['Ritmo constante', 'Espalda recta'] }),
+    ] },
+    { id: 'equilibrio', nombre: 'Equilibrio', min: 10, nota: 'Control y equilibrio con poca carga. Si aún no puedes apoyarte sobre la operada, haz solo la sana y el tándem.', ejercicios: [
+      ej('x_tandem', 'Tándem: un pie delante del otro', '3 × 30 s', 3, 'De pie, con un pie justo delante del otro, cerca de una pared o una mesa para agarrarte.', { seg: 30, video: 'tandem stance balance', tecnica: ['Mirada al frente', 'Tronco recto'] }),
+      ej('x_una', 'A una pierna, primero la sana', '3 × 30 s por pierna', 3, 'De pie sobre una pierna con la rodilla un poco doblada. Empieza por la sana y luego la operada, si tu fase lo permite.', { seg: 30, video: 'single leg balance', tecnica: ['Rodilla un poco doblada', 'Cadera nivelada', 'Mira un punto fijo'] }),
+      ej('x_estrella', 'Alcances en estrella', '2 × 5 por dirección', 2, 'De pie sobre una pierna, toca el suelo con la punta del otro pie adelante, de lado y atrás, sin apoyar el peso.', { video: 'star excursion balance', tecnica: ['Rodilla de apoyo alineada con el pie', 'Toca suave y vuelve al centro', 'Sin girar la rodilla de apoyo'] }),
+      ej('x_peso', 'Pasar el peso de un pie a otro', '1 min', 1, 'De pie con los pies separados, pasa el peso despacio de una pierna a la otra y luego adelante y atrás.', { seg: 60, tecnica: ['Movimiento lento', 'Rodillas un poco dobladas'] }),
+    ] },
+  ];
+
+  /* Se aplican técnica, esfuerzo, variantes de casa y «solo nota» a cada ejercicio (los mismos objetos se comparten entre fases) */
+  const todosEjercicios = new Set([...Object.values(fases).flatMap(f => f.ejercicios || []), ...CALENTAMIENTO, ...fuerzaGeneral.ejercicios, ...sesionesExtra.flatMap(s => s.ejercicios)]);
+  todosEjercicios.forEach(e => {
+    if (!e.tecnica && TECNICA[e.id]) e.tecnica = TECNICA[e.id];
+    if (!e.rpe && RPE[e.id]) e.rpe = RPE[e.id];
+    if (CASA[e.id]) e.casa = CASA[e.id];
+    if (SIN_REGISTRO.includes(e.id)) e.sinRegistro = true;
+  });
+
   window.PROTOCOLO = {
     fuentes: FUENTES,
     rutas: { pendiente: ['p1', 'p2', 'p3'], operado: ['f1', 'f2', 'f3', 'f4', 'f5', 'f6'], conservador: ['c1', 'c2', 'c3', 'f4', 'f5', 'f6'] },
@@ -334,19 +477,14 @@
       meniscoReparado: 'con el menisco cosido, el cirujano suele limitar la flexión y la carga las primeras semanas. Si su pauta es distinta de la de la app, manda la suya.',
       meniscoRoto: 'con el menisco tocado, la app pone límites conservadores: sin flexión profunda con peso, sin giros con el pie apoyado y sin forzar la rodilla contra un tope. Son una opinión prudente, no una norma de las guías: confírmalos con tu fisio.',
     },
-    fuerzaGeneral: {
-      nombre: 'Resto del cuerpo', sesiones: { porSemana: 3 },
-      nota: 'Para no perder forma mientras la rodilla se recupera. Si algo carga la rodilla operada, sáltatelo.',
-      ejercicios: [
-        ej('fg_flexiones', 'Flexiones', '3 × 10', 3, 'Con las rodillas apoyadas o contra una mesa si aún no puedes apoyar bien la pierna.', { video: 'push ups' }),
-        ej('fg_remo', 'Remo con banda o mancuerna', '3 × 12', 3, 'Sentado o apoyado en un banco, tira hacia el ombligo juntando las escápulas.', { video: 'seated band row' }),
-        ej('fg_press', 'Press de hombros sentado', '3 × 10', 3, 'Con mancuernas, sentado y con la espalda apoyada.', { video: 'seated dumbbell shoulder press' }),
-        ej('fg_plancha', 'Plancha', '3 × 30 s', 3, 'Antebrazos y rodillas (o pies) apoyados, cuerpo recto. No la hagas con los pies si molesta la rodilla.', { seg: 30, video: 'forearm plank' }),
-        ej('fg_bicho', 'Bicho muerto', '3 × 10', 3, 'Boca arriba, baja brazo y pierna contrarios sin arquear la espalda.', { video: 'dead bug exercise' }),
-        ej('fg_sana', 'Pierna sana: prensa o sentadilla a una pierna', '3 × 10', 3, 'Entrenar la pierna sana mantiene su fuerza y puede ayudar un poco a la operada (efecto cruzado).', { video: 'single leg press cross education' }),
-        ej('fg_brazos', 'Bici de brazos o remo ergómetro', '10 min', 1, 'Cardio sin la rodilla si tienes la máquina a mano.', { video: 'arm ergometer workout' }),
-      ],
-    },
+    fuerzaGeneral,
+    sesionesExtra,
+    notaExtra: 'Sesiones de 10 a 15 minutos para días sueltos. Elige las que no carguen la rodilla en tu fase y, si un ejercicio molesta, sáltatelo.',
+    notaTecnica: 'Los puntos de técnica y el esfuerzo son pautas generales orientativas, no criterios clínicos.',
+    rpeTxt: 'Esfuerzo (RPE) de 0 a 10: 0 es nada y 10, no poder hacer ni una repetición más. Un 7 deja unas 3 en la recámara.',
+    /* Semáforo de carga del día (sale del chequeo diario). Umbrales prudentes de conocimiento clínico general, no de una guía:
+       los mismos que ya disparan los avisos de Hoy. El tope del dolor es el de la regla del dolor (limite / limiteMenisco). */
+    semaforo: { reposoRojo: 7, hinchazonRojo: 3, hinchazonAmbar: 2, subidaDolor: 2, suenoMin: 6 },
     alarmas: [
       { texto: 'Falta de aire repentina, dolor en el pecho, tos con sangre o desmayo', accion: 'Llama al 112 ahora', urgente: true },
       { texto: 'Pie frío, pálido o azulado, hormigueo que no se va o sangrado que no para', accion: 'Urgencias', urgente: true },

@@ -542,6 +542,75 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 .series button.hecho { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
 .crono { font-size: 3.2rem; font-weight: 800; text-align: center; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
 
+/* Puntos de técnica: lista con una marca fina del color de acento */
+.tecnica { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.tecnica li { position: relative; padding-left: 24px; color: var(--ink-2); font-size: 0.95rem; line-height: 1.4; }
+.tecnica li::before {
+  content: ""; position: absolute; left: 3px; top: 0.36em; width: 11px; height: 6px;
+  border-left: 2px solid var(--accent); border-bottom: 2px solid var(--accent); transform: rotate(-45deg);
+}
+.tecnica.peq { margin: 2px 0 4px; gap: 4px; }
+.tecnica.peq li { font-size: 0.86rem; }
+.dosis .rpe { color: var(--muted); font-weight: 650; }
+.ultima-l { font-size: 0.84rem; color: var(--ink-2); margin-top: 6px; font-variant-numeric: tabular-nums; }
+
+/* Registro de series en la sesión guiada */
+.registro { border-top: 1px solid var(--line); padding-top: 12px; margin-top: 2px; }
+.apuntes { display: flex; flex-wrap: wrap; gap: 8px; }
+.apunte {
+  display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 12px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink-2); border-radius: 14px;
+  font-size: 0.88rem; font-weight: 650; font-variant-numeric: tabular-nums; text-align: left;
+  transition: transform 160ms var(--ease);
+}
+.apunte:active { transform: scale(0.97); }
+.apunte b {
+  display: grid; place-items: center; width: 22px; height: 22px; border-radius: 7px;
+  background: var(--accent-soft); color: var(--accent); font-size: 0.78rem;
+}
+.registro > .btn { align-self: flex-start; }
+.ultima { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; font-variant-numeric: tabular-nums; }
+.ultima .hist > summary, .semaforo .regla > summary { color: var(--accent); font-weight: 650; font-size: 0.88rem; display: inline-flex; align-items: center; min-height: 44px; }
+.ultima .hist ul { margin: 0 0 4px; padding-left: 18px; color: var(--muted); font-size: 0.86rem; }
+.ultima .hist li + li { margin-top: 2px; }
+.rpe-op .opciones { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.rpe-op .opciones button { padding: 0; min-width: 0; font-variant-numeric: tabular-nums; }
+.resumen-ses { margin: 0; padding-left: 18px; color: var(--ink-2); font-size: 0.9rem; }
+.resumen-ses li + li { margin-top: 4px; }
+
+/* Semáforo de carga del día: la tarjeta sigue clara; el color va solo en la luz encendida */
+.semaforo { display: flex; gap: 14px; align-items: flex-start; }
+.semaforo .cuerpo { flex: 1; min-width: 0; }
+.semaforo .regla p { font-size: 0.86rem; color: var(--muted); margin-bottom: 2px; }
+.luces {
+  flex: 0 0 auto; display: flex; flex-direction: column; gap: 5px; padding: 6px 5px; margin-top: 2px;
+  border-radius: 99px; background: var(--bg); border: 1px solid var(--line);
+}
+.luces i { display: block; width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); opacity: 0.5; }
+.luces[data-nivel="rojo"] .r { background: var(--bad); opacity: 1; box-shadow: 0 0 0 3px var(--bad-soft); }
+.luces[data-nivel="ambar"] .a { background: var(--warn); opacity: 1; box-shadow: 0 0 0 3px var(--warn-soft); }
+.luces[data-nivel="verde"] .v { background: var(--ok); opacity: 1; box-shadow: 0 0 0 3px var(--ok-soft); }
+.semaforo-linea { display: flex; gap: 10px; align-items: baseline; margin-top: 10px; font-size: 0.92rem; line-height: 1.35; }
+.card > .semaforo-linea:first-child { margin-top: 0; }
+.semaforo-linea .luz { flex: 0 0 auto; width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); transform: translateY(1px); }
+.semaforo-linea[data-nivel="rojo"] .luz { background: var(--bad); box-shadow: 0 0 0 3px var(--bad-soft); }
+.semaforo-linea[data-nivel="ambar"] .luz { background: var(--warn); box-shadow: 0 0 0 3px var(--warn-soft); }
+.semaforo-linea[data-nivel="verde"] .luz { background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft); }
+
+/* En casa / en el gimnasio */
+.conmutador { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 16px; background: var(--bg); border: 1px solid var(--line); }
+.conmutador button {
+  min-height: 44px; border: 0; border-radius: 12px; background: transparent; color: var(--muted);
+  font-weight: 700; font-size: 0.95rem; transition: transform 160ms var(--ease), background-color 160ms ease, color 160ms ease;
+}
+.conmutador button:active { transform: scale(0.97); }
+.conmutador button.activo { background: var(--accent-soft); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent-line); }
+
+/* Sesiones cortas del resto del cuerpo */
+.nota-seccion { color: var(--muted); font-size: 0.9rem; margin: 0 2px; }
+.titulo-seccion .nota-seccion { margin: 0; }
+.extra .ejs { margin-top: 8px; font-size: 0.84rem; color: var(--ink-2); }
+
 /* Hoja inferior: cristal. Sube con curva de cajón, se baja arrastrando desde el asa o la cabecera
    (o con un tirón rápido) y sale más deprisa de lo que entra. Detrás, nada se mueve. */
 .hoja {
@@ -697,7 +766,8 @@ input[type="range"] { width: 100%; accent-color: var(--accent); height: 36px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
   .btn:active, .nav button:active, .card.pulsable:active, .seg button:active, .opciones button:active,
-  :where(button, label.btn):active:not(:disabled), .icono-btn:active, .paso button:active, .series button:active { transform: none; }
+  :where(button, label.btn):active:not(:disabled), .icono-btn:active, .paso button:active, .series button:active,
+  .apunte:active, .conmutador button:active { transform: none; }
   /* Portada: la pierna ya quieta en su postura; solo fundidos suaves */
   .portada .p-muslo, .portada .p-tibia { animation: none !important; }
   .portada .p-pulso { animation: none !important; opacity: 0; }

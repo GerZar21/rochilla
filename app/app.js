@@ -62,17 +62,51 @@ function estadoVacio() {
   return {
     version: 1, perfil: null, checkins: [], movilidad: [], perimetros: [], derrame: [], pruebas: [],
     sesiones: [], carreras: [], fotos: [], evaluaciones: [], manuales: {}, misEjercicios: [], ocultos: {},
-    leidos: {}, ajustes: { posicionesMuslo: [5, 10, 15] }, sesionActual: null, modificado: 0, ultimaCopia: null,
+    leidos: {}, ajustes: { posicionesMuslo: [5, 10, 15], lugar: 'gimnasio' }, sesionActual: null, modificado: 0, ultimaCopia: null,
   };
 }
 const LISTAS = ['checkins', 'movilidad', 'perimetros', 'derrame', 'pruebas', 'sesiones', 'carreras', 'fotos', 'evaluaciones', 'misEjercicios'];
 const fechaValida = f => typeof f === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(f);
+const esObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
+const numOk = v => typeof v === 'number' && isFinite(v);
+/* Una serie apuntada: todo opcional (peso, repeticiones, segundos, minutos y esfuerzo). */
+const CAMPOS_SERIE = ['kg', 'reps', 'seg', 'min', 'rpe'];
+function sanearSerie(r) { const o = {}; for (const k of CAMPOS_SERIE) if (numOk(r?.[k])) o[k] = r[k]; return o; }
 /* Deja los datos en una forma que la app sabe pintar, venga de donde venga (copia, servidor, versión antigua). */
 function sanear(d) {
   const s = Object.assign(estadoVacio(), d && typeof d === 'object' ? d : {});
   for (const k of LISTAS) s[k] = (Array.isArray(s[k]) ? s[k] : []).filter(x => x && typeof x === 'object' && (k === 'misEjercicios' || fechaValida(x.fecha)));
   for (const k of ['manuales', 'ocultos', 'leidos']) if (!s[k] || typeof s[k] !== 'object' || Array.isArray(s[k])) s[k] = {};
-  s.ajustes = Object.assign(estadoVacio().ajustes, s.ajustes || {});
+  s.ajustes = Object.assign(estadoVacio().ajustes, esObj(s.ajustes) ? s.ajustes : {});
+  if (!Array.isArray(s.ajustes.posicionesMuslo) || !s.ajustes.posicionesMuslo.length) s.ajustes.posicionesMuslo = [5, 10, 15];
+  if (s.ajustes.lugar !== 'casa') s.ajustes.lugar = 'gimnasio';
+  /* Sesiones: las antiguas solo traen { id, series } por ejercicio; el registro (peso, repeticiones, esfuerzo) y la nota son opcionales. */
+  s.sesiones = s.sesiones.map(x => ({
+    ...x,
+    ejercicios: (Array.isArray(x.ejercicios) ? x.ejercicios : []).filter(y => esObj(y) && typeof y.id === 'string').map(y => {
+      const o = { ...y, series: numOk(y.series) ? y.series : 0 };
+      const reg = Array.isArray(y.registro) ? y.registro.filter(r => esObj(r) && numOk(r.n)).map(r => ({ n: r.n, ...sanearSerie(r) })) : [];
+      if (reg.length) o.registro = reg; else delete o.registro;
+      if (typeof o.nota !== 'string' || !o.nota) delete o.nota;
+      if (o.lugar !== 'casa') delete o.lugar;
+      return o;
+    }),
+  }));
+  /* Sesión a medias (también la de versiones anteriores, que no tenía registro) */
+  const sa = s.sesionActual;
+  if (esObj(sa) && (sa.tipo === 'rehab' || sa.tipo === 'fuerza') && fechaValida(sa.fecha)) {
+    if (!Number.isInteger(sa.idx) || sa.idx < 0) sa.idx = 0;
+    if (!esObj(sa.hechas)) sa.hechas = {};
+    if (!esObj(sa.registro)) sa.registro = {};
+    for (const [k, v] of Object.entries(sa.registro)) {
+      if (!esObj(v)) { delete sa.registro[k]; continue; }
+      const series = {};
+      for (const [n, r] of Object.entries(esObj(v.s) ? v.s : {})) if (+n >= 1 && esObj(r)) series[n] = sanearSerie(r);
+      sa.registro[k] = { s: series, ...(typeof v.nota === 'string' && v.nota ? { nota: v.nota } : {}) };
+    }
+    if (!numOk(sa.inicio)) sa.inicio = Date.now();
+    if (!sa.id) sa.id = uid();
+  } else s.sesionActual = null;
   if (s.perfil && typeof s.perfil !== 'object') s.perfil = null;
   /* La prehabilitación de una sola fase se partió en tres etapas (p1-p3). */
   if (s.perfil?.faseId === 'prehab') {
@@ -94,7 +128,7 @@ function cargar() {
   }
 }
 let S = cargar();
-const UI = { segSesion: 'rehab', fotosSel: [], verOcultos: false, crono: null, servidor: false };
+const UI = { segSesion: 'rehab', fotosSel: [], verOcultos: false, crono: null, servidor: false, tec: {}, pruebas: null };
 function guardar() {
   S.modificado = Date.now();
   try { localStorage.setItem(CLAVE, JSON.stringify(S)); }
@@ -342,11 +376,81 @@ function objetivo(f) {
 function sesionesEn(tipo, desde, hasta = hoyISO()) { return S.sesiones.filter(s => s.tipo === tipo && s.fecha >= desde && s.fecha <= hasta).length; }
 const sesionesHoy = (tipo = 'rehab') => sesionesEn(tipo, hoyISO());
 const sesionesSemana = (tipo = 'rehab') => sesionesEn(tipo, lunesDe(hoyISO()));
+/* En casa o en el gimnasio: solo en las fases que lo ofrecen (desde fuerza y control). En casa, cada ejercicio con
+   máquina se cambia por su variante sin máquinas; el id no cambia y el registro guarda que fue en casa. */
+const lugarDe = f => f?.casaGimnasio && S.ajustes.lugar === 'casa' ? 'casa' : 'gimnasio';
+const enLugar = (e, f) => e.casa && lugarDe(f) === 'casa' ? { ...e, ...e.casa, enCasa: true, nombreGimnasio: e.nombre } : e;
+const calentamientoDe = (f = faseActual()) => (f.calentamiento || []).filter(e => !S.ocultos[e.id]).map(e => ({ ...enLugar(e, f), cal: true }));
 function ejerciciosFase(f = faseActual(), conOcultos = false) {
-  const base = (f.ejercicios || []).filter(e => conOcultos || !S.ocultos[e.id]);
+  const base = (f.ejercicios || []).filter(e => conOcultos || !S.ocultos[e.id]).map(e => enLugar(e, f));
   const mios = S.misEjercicios.filter(e => e.activo !== false).map(e => ({ ...e, mio: true }));
   return [...base, ...mios];
 }
+const extraDe = id => (P.sesionesExtra || []).find(x => x.id === id) || null;
+/* Lista de la sesión en curso. El calentamiento solo entra en las sesiones empezadas con esta versión (conCal),
+   para no descolocar una sesión a medias de antes. */
+function listaSesion(sa) {
+  if (sa.tipo === 'fuerza') return (extraDe(sa.extra) || P.fuerzaGeneral).ejercicios;
+  const f = P.fases[sa.faseId] || faseActual();
+  return [...(sa.conCal ? calentamientoDe(f) : []), ...ejerciciosFase(f)];
+}
+
+/* ---------- Registro por ejercicio ----------
+   Todo opcional: tocar «serie hecha» sigue bastando. Por serie se puede apuntar peso, repeticiones (o segundos o minutos)
+   y esfuerzo (RPE 0-10); por ejercicio, una nota. Se guarda dentro de la sesión: S.sesiones[].ejercicios[].registro / nota. */
+function cantidadDe(e) {
+  if (e.sinRegistro) return null;
+  const d = String(e.dosis || '');
+  if (/\bmin\b/.test(d) && !d.includes('×')) return 'min';
+  if ((e.seg || 0) >= 20) return 'seg';
+  return 'reps';
+}
+const conPeso = e => cantidadDe(e) === 'reps' && (!!e.rpe || !!e.mio) && !e.cal;
+const CANTIDAD = { reps: { etq: 'Repeticiones hechas', paso: 1, max: 100 }, seg: { etq: 'Segundos aguantados', paso: 5, max: 900 }, min: { etq: 'Minutos', paso: 1, max: 180 } };
+function planDe(e) {
+  const c = cantidadDe(e), d = String(e.dosis || '');
+  if (c === 'seg') return e.seg;
+  if (c === 'min') { const m = d.match(/(\d+)(?:\s*[-–]\s*\d+)?\s*min/); return m ? +m[1] : null; }
+  if (e.reps) return e.reps;
+  const m = d.match(/×\s*(\d+)(?!\d)(?!\s*(?:s|min)\b)/);
+  return m ? +m[1] : null;
+}
+/* Con espacios que no parten línea: «8,5 kg × 9» no se separa en dos renglones */
+const NB = ' ';
+const fmtKg = v => `${fmt(v, 2)}${NB}kg`;
+/* «20 kg × 10», «10 rep.», «30 s», «8 min» */
+function txtCarga(r) {
+  const cant = r.seg != null ? `${fmt(r.seg)}${NB}s` : r.min != null ? `${fmt(r.min)}${NB}min` : r.reps != null ? String(fmt(r.reps)) : '';
+  if (r.kg > 0) return cant ? `${fmtKg(r.kg)}${NB}${r.reps != null ? '×' : '·'}${NB}${cant}` : fmtKg(r.kg);
+  if (r.reps != null && r.seg == null && r.min == null) return `${cant}${NB}rep.`;
+  return cant || 'hecha';
+}
+function txtEsfuerzo(regs) {
+  const v = regs.map(r => r.rpe).filter(numOk); if (!v.length) return '';
+  const a = Math.min(...v), b = Math.max(...v);
+  return `esfuerzo ${a === b ? fmt(a) : `${fmt(a)}-${fmt(b)}`}`;
+}
+const resumenRegistro = regs => [regs.map(txtCarga).join(', '), txtEsfuerzo(regs)].filter(Boolean).join(' · ');
+const mismoLugar = (x, e) => (x.lugar === 'casa') === !!e.enCasa;
+/* Últimas sesiones guardadas en las que se apuntó algo de este ejercicio (la más reciente primero) */
+function historialEj(e, max = 5) {
+  const out = [];
+  for (let i = S.sesiones.length - 1; i >= 0 && out.length < max; i--) {
+    const s = S.sesiones[i];
+    const x = (s.ejercicios || []).find(y => y.id === e.id && mismoLugar(y, e));
+    if (x && ((x.registro || []).length || x.nota)) out.push({ fecha: s.fecha, registro: x.registro || [], nota: x.nota || '', series: x.series });
+  }
+  return out;
+}
+function mejorPeso(e) {
+  let mejor = null;
+  for (const s of S.sesiones) for (const x of s.ejercicios || []) {
+    if (x.id !== e.id || !mismoLugar(x, e)) continue;
+    for (const r of x.registro || []) if (r.kg > 0 && (!mejor || r.kg > mejor.kg)) mejor = { kg: r.kg, fecha: s.fecha };
+  }
+  return mejor;
+}
+const registroDe = (sa, e) => sa?.registro?.[e.id] || { s: {} };
 function notasEjercicio(e) {
   const out = [];
   const inj = S.perfil?.injerto;
@@ -357,6 +461,61 @@ function notasEjercicio(e) {
   if (e.menisco && (tiene('menisco_reparado'))) out.push(e.menisco);
   if (e.meniscoRoto && menisco()) out.push(e.meniscoRoto);
   return out;
+}
+
+/* ---------- Semáforo de carga del día ----------
+   Sale del chequeo de hoy (y del de ayer, para ver si vas a peor). Reglas fijas, sin porcentajes ni puntuaciones:
+   - Rojo: la rodilla se ha bloqueado, mucha hinchazón o dolor en reposo de 7 o más (lo mismo que dispara el aviso de Hoy).
+   - Ámbar: dolor en reposo o al moverte por encima del tope de la regla del dolor (5/10, o 3/10 con el menisco tocado),
+     hinchazón moderada, peor que ayer (más hinchazón o 2 puntos más de dolor al moverte), la rodilla ha fallado
+     o enganchado, o menos de 6 horas de sueño.
+   - Verde: todo lo demás.
+   Umbrales en P.semaforo y P.reglaDolor; el tope del dolor sale de limiteDolor(). */
+const UMBRAL = () => ({ reposoRojo: 7, hinchazonRojo: 3, hinchazonAmbar: 2, subidaDolor: 2, suenoMin: 6, ...(P.semaforo || {}) });
+function reglaSemaforo() {
+  const u = UMBRAL(), L = limiteDolor();
+  return `Rojo: bloqueo, mucha hinchazón o dolor en reposo de ${u.reposoRojo} o más. Ámbar: dolor por encima de ${L}/10${menisco() ? ' (tope con el menisco tocado)' : ''}, hinchazón moderada, peor que ayer, fallo o enganche, o menos de ${u.suenoMin} h de sueño. Verde: todo lo demás.`;
+}
+function semaforo(fecha = hoyISO()) {
+  const ck = checkinDe(fecha); if (!ck) return null;
+  const u = UMBRAL(), L = limiteDolor(), mec = ck.mecanico || [], ayer = checkinDe(sumarDias(fecha, -1));
+  const rojo = [], ambar = [];
+  if (mec.includes('bloqueo')) rojo.push('se te ha bloqueado la rodilla');
+  if (ck.hinchazon != null && ck.hinchazon >= u.hinchazonRojo) rojo.push('mucha hinchazón');
+  if (ck.dolorReposo != null && ck.dolorReposo >= u.reposoRojo) rojo.push(`dolor en reposo de ${fmt(ck.dolorReposo)}/10`);
+  if (ck.dolorReposo != null && ck.dolorReposo > L && ck.dolorReposo < u.reposoRojo) ambar.push(`dolor en reposo de ${fmt(ck.dolorReposo)}/10`);
+  if (ck.dolorActividad != null && ck.dolorActividad > L) ambar.push(`dolor al moverte de ${fmt(ck.dolorActividad)}/10`);
+  if (ck.hinchazon != null && ck.hinchazon >= u.hinchazonAmbar && ck.hinchazon < u.hinchazonRojo) ambar.push('hinchazón moderada');
+  if (ayer && ((ck.hinchazon != null && ayer.hinchazon != null && ck.hinchazon > ayer.hinchazon) || (ck.dolorActividad != null && ayer.dolorActividad != null && ck.dolorActividad - ayer.dolorActividad >= u.subidaDolor))) ambar.push('estás peor que ayer');
+  if (mec.includes('fallo')) ambar.push('la rodilla se te ha ido');
+  if (mec.includes('enganche')) ambar.push('ha enganchado');
+  if (ck.sueno != null && ck.sueno < u.suenoMin) ambar.push(`has dormido ${fmt(ck.sueno, 1)} h`);
+  if (rojo.length) return { nivel: 'rojo', titulo: 'Hoy descansa o solo movilidad y frío', motivos: rojo, consejo: 'Si es un bloqueo o una señal de alarma, consulta.', alarma: true };
+  if (ambar.length) {
+    const consejo = [ambar.includes('estás peor que ayer') ? P.reglaDolor?.siPeor : 'Haz la sesión con la carga de la última vez, sin subir, y deja el ejercicio que moleste.'];
+    if (mec.includes('fallo') || mec.includes('enganche')) consejo.push('Deja el gesto o el ejercicio que lo provocó y coméntalo con tu fisio.');
+    return { nivel: 'ambar', titulo: 'Sesión suave: repite la carga anterior', motivos: ambar, consejo: consejo.filter(Boolean).join(' ') };
+  }
+  return { nivel: 'verde', titulo: 'Sesión normal', motivos: [], consejo: 'La rodilla está tranquila según tu chequeo. Si todo va bien, sube la carga poco a poco.' };
+}
+const NIVEL_TXT = { verde: 'verde', ambar: 'ámbar', rojo: 'rojo' };
+const luces = nivel => `<div class="luces" data-nivel="${nivel}" aria-hidden="true"><i class="r"></i><i class="a"></i><i class="v"></i></div>`;
+/* Tarjeta completa (Hoy) o línea compacta (Sesión y al empezar la guiada) */
+function htmlSemaforo(sem, compacto = false) {
+  if (!sem) return '';
+  const porque = sem.motivos.length ? `Por qué: ${sem.motivos.join(', ')}.` : '';
+  if (compacto) return `<div class="semaforo-linea" data-nivel="${sem.nivel}"><span class="luz" aria-hidden="true"></span><div><b>Hoy, ${esc(sem.titulo.charAt(0).toLowerCase() + sem.titulo.slice(1))}</b>${porque ? `<span class="sub"> ${esc(porque)}</span>` : ''}</div></div>`;
+  return `<div class="card semaforo">
+    ${luces(sem.nivel)}
+    <div class="cuerpo pila" style="gap:4px">
+      <p class="sub">Carga de hoy · semáforo ${NIVEL_TXT[sem.nivel]}</p>
+      <h3>${esc(sem.titulo)}</h3>
+      ${porque ? `<p class="sub">${esc(porque)}</p>` : ''}
+      <p style="font-size:.92rem;color:var(--ink-2)">${esc(sem.consejo)}</p>
+      ${sem.alarma ? `<button class="btn peq borde" data-ir="alarma" style="align-self:flex-start;margin-top:4px">Ver señales de alarma</button>` : ''}
+      <details class="regla"><summary>Cómo se decide</summary><p>${esc(reglaSemaforo())}</p></details>
+    </div>
+  </div>`;
 }
 
 /* ---------- Racha y logros ---------- */
@@ -450,9 +609,10 @@ function anillo(v, total, etq) {
 }
 
 /* ---------- Piezas de formulario ---------- */
-function opciones(grupo, items, sel, completas = false, multi = false) {
+/* opcional: en una elección única, tocar otra vez la marcada la desmarca (para campos que se pueden dejar en blanco) */
+function opciones(grupo, items, sel, completas = false, multi = false, opcional = false) {
   const activo = v => multi ? (sel || []).includes(v) : sel != null && String(sel) === String(v);
-  return `<div class="opciones${completas ? ' completas' : ''}" data-grupo="${grupo}"${multi ? ' data-multi="1"' : ''}>${items.map(([v, t]) => `<button type="button" data-valor="${esc(v)}" class="${activo(v) ? 'activo' : ''}">${esc(t)}</button>`).join('')}</div>`;
+  return `<div class="opciones${completas ? ' completas' : ''}" data-grupo="${grupo}"${multi ? ' data-multi="1"' : ''}${opcional ? ' data-opcional="1"' : ''}>${items.map(([v, t]) => `<button type="button" data-valor="${esc(v)}" class="${activo(v) ? 'activo' : ''}">${esc(t)}</button>`).join('')}</div>`;
 }
 function deslizador(id, etq, v, min, max, a, b) {
   return `<div class="deslizador"><div class="cab"><label for="${id}">${etq}</label><span class="valor" id="${id}-v">${v}</span></div><input type="range" id="${id}" min="${min}" max="${max}" step="1" value="${v}" data-salida="${id}-v"><div class="extremos"><span>${a}</span><span>${b}</span></div></div>`;
@@ -539,11 +699,9 @@ VISTAS.hoy = () => {
   const avisos = [];
   if (p.situacion === 'pendiente' && p.fechaOperacion && p.fechaOperacion <= hoyISO()) avisos.push(`<div class="card acento pila"><h3>¿Ya te han operado?</h3><p class="sub">Cuando lo marques, la app pasa al plan de después de la operación.</p><button class="btn peq" data-accion="ya-operado">Sí, ya me han operado</button></div>`);
   if (p.ligamento !== 'lca') avisos.push(`<div class="card aviso-suave"><h3>Ojo: cruzado posterior</h3><p style="margin-top:4px">Este programa está hecho para el cruzado anterior. El posterior se rehabilita distinto (por ejemplo, sin cargar los isquiotibiales al principio y a veces con una rodillera especial). Usa los ejercicios que te mande tu fisio y apúntalos en «Ejercicios de tu fisio».</p></div>`);
-  if (ck && (ck.hinchazon >= 3 || ck.dolorReposo >= 7)) avisos.push(`<div class="card alerta pila"><h3>Hoy marcas mucho dolor o hinchazón</h3><p>Si ha aparecido de golpe, o hay fiebre, calor, enrojecimiento o dolor en la pantorrilla, llama a tu cirujano.</p><button class="btn peq peligro" data-ir="alarma">Ver señales de alarma</button></div>`);
-  else if (ck) {
-    const ayer = checkinDe(sumarDias(hoyISO(), -1));
-    if (ayer && (ck.hinchazon > ayer.hinchazon || ck.dolorActividad - ayer.dolorActividad >= 2)) avisos.push(`<div class="card aviso-suave"><h3>Hoy estás algo peor que ayer</h3><p style="margin-top:4px">${esc(P.reglaDolor?.siPeor || 'Baja un poco la carga de hoy y vuelve a subir cuando la rodilla se calme.')}</p></div>`);
-  }
+  /* «Hoy estás peor que ayer» ya lo dice el semáforo de carga (ámbar), con la regla del dolor */
+  const u = UMBRAL(), sem = semaforo();
+  if (ck && (ck.hinchazon >= u.hinchazonRojo || ck.dolorReposo >= u.reposoRojo)) avisos.push(`<div class="card alerta pila"><h3>Hoy marcas mucho dolor o hinchazón</h3><p>Si ha aparecido de golpe, o hay fiebre, calor, enrojecimiento o dolor en la pantorrilla, llama a tu cirujano.</p><button class="btn peq peligro" data-ir="alarma">Ver señales de alarma</button></div>`);
   const mec = ck?.mecanico || [];
   if (mec.includes('bloqueo')) avisos.unshift(`<div class="card alerta pila"><h3>Hoy se te ha bloqueado la rodilla</h3><p>Si no estira o no dobla del todo y no se suelta, no cargues y llama a tu cirujano en las próximas 24 horas. Si no se desbloquea en unas horas o duele mucho, ve a urgencias.</p><button class="btn peq peligro" data-ir="alarma">Ver señales de alarma</button></div>`);
   else if (mec.includes('fallo') || mec.includes('enganche')) avisos.unshift(`<div class="card aviso-suave pila"><h3>Hoy la rodilla ${mec.includes('fallo') ? 'se te ha ido' : 'ha enganchado'}</h3><p>No subas la carga, deja el gesto o el ejercicio que lo provocó y coméntalo con tu fisio. Si se repite, también con tu cirujano.</p></div>`);
@@ -553,7 +711,7 @@ VISTAS.hoy = () => {
   const ultM = ultimaMov('flex') || ultimaMov('ext');
   if (!ultM || diasEntre(ultM.fecha, hoyISO()) >= 7) recordatorios.push(`<div class="card pulsable" data-ir="progreso-movilidad"><div class="fila entre"><div><h3>Toca medir la movilidad</h3><p class="sub">${ultM ? `La última fue el ${fCorta(ultM.fecha)}` : 'Aún no la has medido'}. Una vez por semana basta.</p></div><span class="chip acento">Medir</span></div></div>`);
 
-  const art = ARTICULOS.find(a => (a.fases || []).includes(f.id) && !S.leidos[a.id]) || ARTICULOS.find(a => !S.leidos[a.id]);
+  const art = ARTICULOS.find(a => (a.fases || []).includes(f.id) && !S.leidos[a.id]) || ARTICULOS.find(a => a.etapa === etapaDe(f) && !S.leidos[a.id]) || ARTICULOS.find(a => !S.leidos[a.id]);
   const ext = ultimaMov('ext'), flex = ultimaMov('flex'), der = ultimo(S.derrame);
   return `<div class="pila">
     <div class="saludo"><h1>Hola${p.nombre ? ', ' + esc(p.nombre) : ''}</h1><p>${esc(etiquetaTiempo())}</p></div>
@@ -566,6 +724,7 @@ VISTAS.hoy = () => {
       <div><div class="fila entre" style="margin-bottom:6px"><span class="sub">${sig ? 'Criterios para avanzar' : p.situacion === 'pendiente' ? 'Objetivos antes de operar' : 'Criterios para el alta'}</span><b>${ef.ok} de ${ef.total}</b></div><div class="barra"><i style="width:${ef.total ? (ef.ok / ef.total * 100) : 0}%"></i></div></div>
       <div class="rejilla-2"><button class="btn" data-ir="sesion">${S.sesionActual ? 'Seguir la sesión' : 'Empezar sesión'}</button><button class="btn borde" data-ir="evaluar">${sig ? '¿Puedo avanzar?' : 'Ver criterios'}</button></div>
     </div>
+    ${htmlSemaforo(sem)}
     <div class="card pulsable" data-accion="abrir-checkin">
       ${ck ? `<div class="fila entre"><h3>Chequeo de hoy hecho</h3><span class="chip ok">Editar</span></div>
         <div class="rejilla-3" style="margin-top:10px">
@@ -573,7 +732,7 @@ VISTAS.hoy = () => {
           <div class="dato"><span class="n" style="font-size:1.1rem;padding-top:6px">${TXT.hinchazon[ck.hinchazon] || '—'}</span><span class="l">Hinchazón</span></div>
           <div class="dato"><span class="n">${ck.confianza ?? '—'}<small>/10</small></span><span class="l">Confianza</span></div>
         </div>`
-      : `<div class="fila entre"><div><h3>¿Cómo está hoy la rodilla?</h3><p class="sub">Chequeo diario: 30 segundos</p></div><span class="chip acento">Hacer</span></div>`}
+      : `<div class="fila entre"><div><h3>¿Cómo está hoy la rodilla?</h3><p class="sub">Chequeo diario: 30 segundos. Con él sabrás cómo cargar hoy.</p></div><span class="chip acento">Hacer</span></div>`}
     </div>
     ${recordatorios.join('')}
     <div class="titulo-seccion"><h2>Foco de esta fase</h2></div>
@@ -591,18 +750,30 @@ VISTAS.hoy = () => {
 };
 
 VISTAS.sesion = () => {
-  const f = faseActual(), tipo = UI.segSesion;
+  const f = faseActual(), tipo = UI.segSesion, sa = S.sesionActual;
   const seg = `<div class="seg">${[['rehab', 'Rehabilitación'], ['fuerza', 'Resto del cuerpo']].map(([v, t]) => `<button data-accion="seg-sesion" data-v="${v}" class="${tipo === v ? 'activo' : ''}">${t}</button>`).join('')}</div>`;
   if (tipo === 'fuerza') {
-    const g = P.fuerzaGeneral; const obj = objetivo(g);
+    const g = P.fuerzaGeneral; const obj = objetivo(g); const extras = P.sesionesExtra || [];
     return `<div class="pila"><div class="saludo"><h1>Sesión</h1></div>${seg}
       <div class="card"><h2>${esc(g.nombre)}</h2><p class="sub" style="margin-top:4px">${esc(g.nota || '')}</p><p class="sub" style="margin-top:6px">Esta semana: ${sesionesSemana('fuerza')} de ${obj.n}</p></div>
       ${listaEjercicios(g.ejercicios, false)}
-      <button class="btn ancho" data-accion="empezar-sesion" data-tipo="fuerza">${S.sesionActual?.tipo === 'fuerza' ? 'Seguir la sesión' : 'Empezar sesión'}</button>
+      <button class="btn ancho" data-accion="empezar-sesion" data-tipo="fuerza">${sa?.tipo === 'fuerza' && !sa.extra ? 'Seguir la sesión' : 'Empezar sesión'}</button>
+      ${extras.length ? `<div class="titulo-seccion"><h2>Sesiones cortas</h2></div>
+      <p class="nota-seccion">${esc(P.notaExtra || '')}</p>
+      ${extras.map(x => {
+        const aMedias = sa?.tipo === 'fuerza' && sa.extra === x.id;
+        return `<div class="card pulsable extra" data-accion="empezar-sesion" data-tipo="fuerza" data-extra="${esc(x.id)}">
+          <div class="fila entre"><h3>${esc(x.nombre)}</h3><span class="chip${aMedias ? ' acento' : ''}">${aMedias ? 'Seguir' : `${fmt(x.min)} min`}</span></div>
+          <p class="sub">${esc(x.nota || '')}</p>
+          <p class="ejs">${x.ejercicios.map(e => esc(e.nombre)).join(' · ')}</p>
+        </div>`;
+      }).join('')}` : ''}
     </div>`;
   }
-  const ej = ejerciciosFase(f); const ocultos = (f.ejercicios || []).filter(e => S.ocultos[e.id]);
+  const cal = calentamientoDe(f), ej = ejerciciosFase(f);
+  const ocultos = [...(f.calentamiento || []), ...(f.ejercicios || [])].filter(e => S.ocultos[e.id]);
   const obj = objetivo(f); const hechas = obj.periodo === 'hoy' ? sesionesHoy() : sesionesSemana();
+  const sem = semaforo();
   const notas = [];
   if (menisco()) notas.push(`<div class="nota injerto"><b>Menisco tocado:</b> ${esc(P.notas?.meniscoRoto || '')}</div>`);
   if (tiene('menisco_reparado')) notas.push(`<div class="nota injerto"><b>Menisco cosido:</b> ${esc(P.notas?.meniscoReparado || 'tu cirujano suele limitar la flexión y la carga las primeras semanas. Manda su pauta sobre la de la app.')}</div>`);
@@ -611,51 +782,85 @@ VISTAS.sesion = () => {
     <div class="card">
       <div class="fila entre"><div><p class="sub">${esc(f.nombre)}</p><h2>Sesión de hoy</h2></div><span class="chip acento">${hechas}/${obj.n} ${obj.periodo === 'hoy' ? 'hoy' : 'esta semana'}</span></div>
       ${f.frecuencia ? `<p class="sub" style="margin-top:6px">${esc(f.frecuencia)}</p>` : ''}
+      ${sem ? htmlSemaforo(sem, true) : `<button class="enlace" data-accion="abrir-checkin" style="font-size:.92rem">Haz el chequeo de hoy para saber cómo cargar</button>`}
       <div class="nota"><b>Regla del dolor:</b> ${esc((menisco() ? P.reglaDolor?.cortaMenisco : P.reglaDolor?.corta) || '')}</div>
       ${notas.join('')}
-      <p class="sub" style="margin-top:8px">${esc(P.notaDosis || '')}</p>
+      <p class="sub" style="margin-top:8px">${esc(P.notaDosis || '')} ${esc(P.notaTecnica || '')}</p>
     </div>
+    ${f.casaGimnasio ? `<div class="card pila"><h3>¿Dónde entrenas hoy?</h3>${conmutadorLugar(f)}<p class="sub">${lugarDe(f) === 'casa' ? 'Salen las variantes sin máquinas.' : 'En casa salen variantes sin máquinas.'}</p></div>` : ''}
+    ${cal.length ? `<div class="titulo-seccion"><h2>Calentamiento</h2><span class="nota-seccion">5-8 min</span></div>${listaEjercicios(cal, true)}<div class="titulo-seccion"><h2>Ejercicios</h2></div>` : ''}
     ${listaEjercicios(ej, true)}
     ${f.evitar?.length ? `<div class="card aviso-suave"><h3>En esta fase, evita</h3><ul style="margin:6px 0 0;padding-left:20px">${f.evitar.map(x => `<li>${esc(x)}</li>`).join('')}</ul></div>` : ''}
     <div class="fila" style="flex-wrap:wrap"><button class="btn borde peq" data-accion="nuevo-ejercicio">Añadir ejercicio de tu fisio</button>${ocultos.length ? `<button class="btn borde peq" data-accion="ver-ocultos">${UI.verOcultos ? 'Esconder' : 'Ver'} quitados (${ocultos.length})</button>` : ''}</div>
     ${UI.verOcultos && ocultos.length ? `<div class="card"><h3>Quitados de tu sesión</h3><div class="lista" style="margin-top:6px">${ocultos.map(e => `<div class="item"><div class="cuerpo">${esc(e.nombre)}</div><button class="btn claro peq" data-accion="mostrar-ej" data-id="${e.id}">Volver a poner</button></div>`).join('')}</div></div>` : ''}
-    <button class="btn ancho" data-accion="empezar-sesion" data-tipo="rehab">${S.sesionActual?.tipo === 'rehab' ? 'Seguir la sesión' : 'Empezar sesión'}</button>
+    <button class="btn ancho" data-accion="empezar-sesion" data-tipo="rehab">${sa?.tipo === 'rehab' ? 'Seguir la sesión' : 'Empezar sesión'}</button>
     ${fuenteTxt(f.fuentes)}
   </div>`;
 };
+const conmutadorLugar = f => `<div class="conmutador" role="group" aria-label="Dónde entrenas">${[['casa', 'En casa'], ['gimnasio', 'En el gimnasio']].map(([v, t]) => `<button type="button" data-accion="lugar" data-v="${v}" class="${lugarDe(f) === v ? 'activo' : ''}" aria-pressed="${lugarDe(f) === v}">${t}</button>`).join('')}</div>`;
+const urlVideo = e => `https://www.youtube.com/results?search_query=${encodeURIComponent(e.enCasa ? e.nombre : (e.video || e.nombre))}`;
 function listaEjercicios(lista, editable) {
   if (!lista.length) return `<div class="card vacio">No hay ejercicios en esta fase. Añade los de tu fisio.</div>`;
   return `<div class="card"><div class="lista">${lista.map((e, i) => {
-    const notas = notasEjercicio(e);
+    const notas = notasEjercicio(e), tec = e.tecnica || [], abierta = !!UI.tec[e.id];
+    const ult = historialEj(e, 1)[0];
     return `<div class="item" style="align-items:flex-start"><div class="ej" style="flex:1">
       <div class="num">${i + 1}</div>
-      <div class="cuerpo"><h3>${esc(e.nombre)}${e.mio ? ' <span class="chip acento">Tu fisio</span>' : ''}</h3><p class="dosis">${esc(e.dosis || '')}</p>${e.desc ? `<p class="sub" style="margin-top:4px">${esc(e.desc)}</p>` : ''}
+      <div class="cuerpo"><h3>${esc(e.nombre)}${e.mio ? ' <span class="chip acento">Tu fisio</span>' : ''}</h3><p class="dosis">${esc(e.dosis || '')}${e.rpe ? `<span class="rpe"> · esfuerzo ${esc(e.rpe)} de 10</span>` : ''}</p>${e.desc ? `<p class="sub" style="margin-top:4px">${esc(e.desc)}</p>` : ''}
+        ${e.enCasa ? `<p class="sub" style="margin-top:4px">En el gimnasio: ${esc(e.nombreGimnasio)}</p>` : ''}
         ${notas.map(n => `<div class="nota injerto">${esc(n)}</div>`).join('')}
-        <div class="fila" style="margin-top:8px;gap:14px">${e.mio ? '' : `<a href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.video || e.nombre)}" target="_blank" rel="noopener" class="enlace" style="font-size:.88rem">Ver vídeos</a>`}
-        ${editable ? (e.mio ? `<button class="enlace" style="font-size:.88rem;color:var(--bad)" data-accion="borrar-mio" data-id="${e.id}">Borrar</button>` : `<button class="enlace" style="font-size:.88rem;color:var(--muted)" data-accion="ocultar-ej" data-id="${e.id}">No me lo han mandado</button>`) : ''}</div>
+        ${ult && ult.registro.length ? `<p class="ultima-l">La última vez (${fCorta(ult.fecha)}): ${esc(resumenRegistro(ult.registro))}</p>` : ''}
+        ${tec.length || !e.mio ? `<div class="fila" style="margin-top:2px;gap:0 16px;flex-wrap:wrap">${tec.length ? `<button class="enlace" style="font-size:.88rem" data-accion="ver-tec" data-id="${esc(e.id)}" aria-expanded="${abierta}">${abierta ? 'Ocultar técnica' : 'Técnica'}</button>` : ''}${e.mio ? '' : `<a href="${urlVideo(e)}" target="_blank" rel="noopener" class="enlace" style="font-size:.88rem">Ver vídeos</a>`}</div>` : ''}
+        ${tec.length && abierta ? `<ul class="tecnica peq">${tec.map(t => `<li>${esc(t)}</li>`).join('')}</ul>` : ''}
+        ${editable ? (e.mio ? `<button class="enlace" style="font-size:.88rem;color:var(--bad)" data-accion="borrar-mio" data-id="${e.id}">Borrar</button>` : `<button class="enlace" style="font-size:.88rem;color:var(--muted)" data-accion="ocultar-ej" data-id="${e.id}">No me lo han mandado</button>`) : ''}
       </div></div></div>`;
   }).join('')}</div></div>`;
 }
 
 VISTAS.guiada = () => {
   const sa = S.sesionActual; if (!sa) { setTimeout(() => ir('sesion'), 0); return ''; }
-  const lista = listaSesion(sa); const e = lista[sa.idx]; if (!e) { setTimeout(() => ir('sesion'), 0); return ''; }
+  const lista = listaSesion(sa); if (!lista.length) { setTimeout(() => ir('sesion'), 0); return ''; }
+  if (sa.idx >= lista.length) sa.idx = lista.length - 1;   /* la lista ha encogido (ejercicio quitado o borrado) */
+  const e = lista[sa.idx];
   const series = e.series || 1, hechas = sa.hechas[e.id] || 0;
-  const notas = notasEjercicio(e);
+  const notas = notasEjercicio(e), rg = registroDe(sa, e), cant = cantidadDe(e), tec = e.tecnica || [];
+  const apuntadas = Object.keys(rg.s || {}).map(Number).filter(n => n >= 1 && n <= series).sort((a, b) => a - b);
+  const siguiente = Array.from({ length: series }, (_, i) => i + 1).find(n => !rg.s?.[n]);
+  const hist = historialEj(e, 5), mejor = conPeso(e) ? mejorPeso(e) : null;
+  const extra = sa.tipo === 'fuerza' ? extraDe(sa.extra) : null;
+  const bloque = e.cal ? 'Calentamiento' : sa.tipo === 'fuerza' ? (extra ? extra.nombre : 'Resto del cuerpo') : 'Rehabilitación';
+  const alEmpezar = sa.idx === 0 && sa.tipo === 'rehab', sem = alEmpezar ? semaforo() : null;
+  const etqAnotar = !apuntadas.length ? (conPeso(e) ? 'Apuntar peso y repeticiones' : { reps: 'Apuntar repeticiones y esfuerzo', seg: 'Apuntar segundos y esfuerzo', min: 'Apuntar minutos y esfuerzo' }[cant]) : `Apuntar la serie ${siguiente}`;
+  const histHtml = hist.length || mejor ? `<div class="ultima">
+      ${hist[0] ? `<p class="sub"><b>La última vez</b>, ${fCorta(hist[0].fecha)}: ${esc([resumenRegistro(hist[0].registro), hist[0].nota ? `«${hist[0].nota}»` : ''].filter(Boolean).join(' · '))}</p>` : ''}
+      ${mejor ? `<p class="sub"><b>Más peso</b>: ${fmtKg(mejor.kg)}, el ${fCorta(mejor.fecha)}</p>` : ''}
+      ${hist.length > 1 ? `<details class="hist"><summary>Historial</summary><ul>${hist.map(h => `<li>${fCorta(h.fecha)}: ${esc([resumenRegistro(h.registro), h.nota ? `«${h.nota}»` : ''].filter(Boolean).join(' · '))}</li>`).join('')}</ul></details>` : ''}
+    </div>` : '';
   return `<div class="pila guiada">
-    <div class="cab"><span>Ejercicio ${sa.idx + 1} de ${lista.length}</span><span>${sa.tipo === 'fuerza' ? 'Resto del cuerpo' : 'Rehabilitación'}</span></div>
-    <div class="barra"><i style="width:${((sa.idx) / lista.length) * 100}%"></i></div>
+    <div class="cab"><span>Ejercicio ${sa.idx + 1} de ${lista.length}</span><span>${esc(bloque)}</span></div>
+    <div class="barra"><i style="width:${(sa.idx / lista.length) * 100}%"></i></div>
+    ${sem ? `<div class="card">${htmlSemaforo(sem, true)}</div>` : alEmpezar ? `<div class="card"><button class="enlace" data-accion="abrir-checkin">Haz antes el chequeo de hoy: te dice cómo cargar</button></div>` : ''}
     <div class="card pila">
       <h1>${esc(e.nombre)}</h1>
-      <p class="dosis" style="font-size:1.05rem">${esc(e.dosis || '')}</p>
+      <div><p class="dosis" style="font-size:1.05rem">${esc(e.dosis || '')}</p>${e.rpe ? `<p class="sub" style="margin-top:2px">Esfuerzo orientativo: ${esc(e.rpe)} de 10${e.cal ? '. Es para calentar, no para cansarte' : ''}.</p>` : ''}</div>
       ${e.desc ? `<p>${esc(e.desc)}</p>` : ''}
+      ${e.enCasa ? `<p class="sub">Variante en casa de «${esc(e.nombreGimnasio)}».</p>` : ''}
+      ${tec.length ? `<div><h3 style="margin-bottom:8px">Técnica</h3><ul class="tecnica">${tec.map(t => `<li>${esc(t)}</li>`).join('')}</ul></div>` : ''}
       ${notas.map(n => `<div class="nota injerto">${esc(n)}</div>`).join('')}
-      ${e.mio ? '' : `<a class="enlace" href="https://www.youtube.com/results?search_query=${encodeURIComponent(e.video || e.nombre)}" target="_blank" rel="noopener">Ver vídeos de cómo se hace</a>`}
+      ${tec.length || e.rpe ? `<p class="fuente">${esc(P.notaTecnica || '')}</p>` : ''}
+      ${e.mio ? '' : `<a class="enlace" href="${urlVideo(e)}" target="_blank" rel="noopener">Ver vídeos de cómo se hace</a>`}
     </div>
     <div class="card pila">
-      <h3>Series hechas</h3>
-      <div class="series">${Array.from({ length: series }, (_, i) => `<button data-accion="serie" data-n="${i + 1}" class="${i < hechas ? 'hecho' : ''}">${i + 1}</button>`).join('')}</div>
+      <div class="fila entre"><h3>Series hechas</h3><span class="sub">${Math.min(hechas, series)} de ${series}</span></div>
+      <div class="series">${Array.from({ length: series }, (_, i) => `<button data-accion="serie" data-n="${i + 1}" class="${i < hechas ? 'hecho' : ''}" aria-pressed="${i < hechas}" aria-label="Serie ${i + 1}">${i + 1}</button>`).join('')}</div>
       ${e.seg ? `<div class="crono" id="crono">${e.seg}s</div><button class="btn claro ancho" data-accion="crono" data-seg="${e.seg}">Empezar ${e.seg} segundos</button>` : ''}
+      <div class="registro pila">
+        ${cant && apuntadas.length ? `<div class="apuntes">${apuntadas.map(n => { const r = rg.s[n]; return `<button class="apunte" data-accion="anotar-serie" data-n="${n}" aria-label="Cambiar lo apuntado en la serie ${n}"><b>${n}</b>${esc(txtCarga(r))}${numOk(r.rpe) ? ` · esfuerzo ${fmt(r.rpe)}` : ''}</button>`; }).join('')}</div>` : ''}
+        ${rg.nota ? `<p class="sub">Nota: ${esc(rg.nota)}</p>` : ''}
+        ${cant ? (siguiente ? `<button class="btn claro" data-accion="anotar-serie" data-n="${siguiente}">${esc(etqAnotar)}</button>` : '') : `<button class="btn claro" data-accion="anotar-serie" data-n="0">${rg.nota ? 'Cambiar la nota' : 'Añadir una nota'}</button>`}
+        ${cant ? `<p class="sub">${apuntadas.length && !siguiente ? 'Toca una serie para cambiarla o añadir una nota.' : 'Opcional: con tocar el número de la serie basta.'}</p>` : ''}
+        ${histHtml}
+      </div>
     </div>
     <div class="rejilla-2">
       <button class="btn borde" data-accion="ej-ant" ${sa.idx === 0 ? 'disabled' : ''}>Anterior</button>
@@ -663,15 +868,17 @@ VISTAS.guiada = () => {
     </div>
   </div>`;
 };
-function listaSesion(sa) { return sa.tipo === 'fuerza' ? P.fuerzaGeneral.ejercicios : ejerciciosFase(P.fases[sa.faseId] || faseActual()); }
 
 VISTAS.evaluar = () => {
   const f = faseActual(), sig = siguienteFase(), ef = estadoFase(f);
   const todo = ef.ok === ef.total;
   const estadoChip = r => r.estado === 'ok' ? '<span class="chip ok">Cumplido</span>' : r.estado === 'no' ? '<span class="chip no">Aún no</span>' : r.estado === 'falta' ? '<span class="chip falta">Falta medir</span>' : '<span class="chip">Márcalo</span>';
+  const dp = pasosPrueba(false), hayPruebas = dp.length || pasosPrueba(true).length;
   return `<div class="pila">
     <div class="saludo"><h1>${sig ? `De ${esc(f.nombre)} a ${esc(sig.nombre)}` : esc(f.nombre)}</h1><p>${S.perfil.situacion === 'pendiente' && !sig ? 'Lo que conviene tener antes de entrar al quirófano.' : 'Se avanza cuando la rodilla cumple los criterios, no por el calendario.'}</p></div>
     ${f.nota ? `<div class="card acento"><p>${esc(f.nota)}</p></div>` : ''}
+    ${hayPruebas ? `<div class="card pila"><div><h3>Día de pruebas</h3><p class="sub">${dp.length ? `${dp.length === 1 ? `Te falta una: ${esc(infoPaso(dp[0].id).corto)}` : `${dp.length} pruebas por hacer o repetir, empezando por ${esc(infoPaso(dp[0].id).corto)}`}. La app te guía una a una, con instrucciones y lo que necesitas.` : 'Tienes todo medido y al día. Si quieres, puedes repetirlas todas.'}</p></div>
+      <button class="btn ancho${dp.length ? '' : ' borde'}" data-accion="hacer-pruebas"${dp.length ? '' : ' data-todas="1"'}>${dp.length ? 'Hacer las pruebas' : 'Repetir todas las pruebas'}</button></div>` : ''}
     <div class="card"><div class="lista">${ef.ev.map(({ c, r }) => `
       <div class="item" style="align-items:flex-start">
         ${r.manual || (c.medida === 'manual') ? `<button class="check ${r.estado === 'ok' ? 'hecho' : ''}" data-accion="manual" data-id="${c.id}" aria-label="Marcar">${r.estado === 'ok' ? '✓' : ''}</button>` : `<div class="check ${r.estado === 'ok' ? 'hecho' : ''}">${r.estado === 'ok' ? '✓' : ''}</div>`}
@@ -691,8 +898,154 @@ VISTAS.evaluar = () => {
   </div>`;
 };
 
+/* ---------- Día de pruebas ----------
+   Desde «¿Puedo avanzar?»: recorre una a una las medidas de la fase que faltan, que aún no se cumplen o cuya última medida
+   tiene más de 14 días (no las que ya se han hecho hoy). Cada paso abre la hoja de siempre (movilidad, derrame, perímetros
+   o pruebas) y guarda en los registros de siempre; los criterios a mano que son una prueba física se marcan en el mismo paso. */
+const VIGENCIA_PRUEBA = 14;
+const PASOS_PRUEBA = {
+  movilidad: { titulo: 'Extensión y flexión', corto: 'movilidad', texto: 'Tumbado boca arriba y relajado. Apunta los grados que le faltan para estar recta y cuánto dobla.', material: 'Goniómetro o el móvil', como: 'movilidad' },
+  derrame: { titulo: 'Derrame: prueba del barrido', corto: 'derrame', texto: 'Pierna estirada y relajada. Sube el líquido por la cara interna de la rodilla y mira si vuelve al barrer por la externa.', material: 'Nada', como: 'derrame' },
+  perimetros: { titulo: 'Perímetros de rodilla y muslo', corto: 'perímetros', texto: 'Pierna estirada y relajada. Mide las dos piernas en los mismos puntos.', material: 'Cinta métrica', como: 'perimetro' },
+  slr: { corto: 'pierna recta', texto: 'Tumbado boca arriba, aprieta el muslo y levanta la pierna estirada. Mira si la rodilla se dobla al subir.', material: 'Nada' },
+  puente: { corto: 'puente a una pierna', texto: 'Con el talón sobre un banco o un cajón. Repeticiones hasta que no puedas con buena técnica, con cada pierna.', material: 'Banco o cajón' },
+  gemelo: { corto: 'gemelo a una pierna', texto: 'En el borde de un escalón, una repetición cada 2 s hasta que no puedas, con cada pierna.', material: 'Escalón y cronómetro' },
+  plancha: { corto: 'plancha lateral', texto: 'Sobre el lado de cada pierna, con el cuerpo recto. Para el cronómetro cuando caiga la cadera.', material: 'Cronómetro' },
+  silla: { corto: 'silla a una pierna', texto: 'Con los brazos cruzados, levántate de una silla con una sola pierna. Repeticiones hasta que no puedas, con cada pierna.', material: 'Una silla' },
+  eq_abiertos: { corto: 'equilibrio con ojos abiertos', texto: 'De pie a una pierna con los brazos cruzados. Para al descruzarlos, apoyar el otro pie o mover el de apoyo (máximo 45 s).', material: 'Cronómetro' },
+  eq_cerrados: { corto: 'equilibrio con ojos cerrados', texto: 'Igual, con los ojos cerrados y algo cerca para agarrarte.', material: 'Cronómetro' },
+  cuad: { corto: 'fuerza del cuádriceps', texto: 'Mejor con dinamómetro y tu fisio. Si no, el peso máximo que mueves con buena técnica en la máquina de extensión, cada pierna por separado.', material: 'Dinamómetro o máquina de extensión' },
+  isquios: { corto: 'fuerza de isquiotibiales', texto: 'Como el cuádriceps: con dinamómetro o en la máquina de curl, cada pierna por separado.', material: 'Dinamómetro o máquina de curl' },
+  salto_simple: { corto: 'salto simple', texto: 'Salta lo más lejos que puedas a una pierna y cae sobre la misma, quieto. Empieza por la sana; 2-3 intentos con cada una.', material: 'Cinta métrica' },
+  salto_triple: { corto: 'triple salto', texto: 'Tres saltos seguidos con la misma pierna; apunta la distancia total.', material: 'Cinta métrica' },
+  salto_cruzado: { corto: 'triple salto cruzado', texto: 'Tres saltos cruzando una línea de 15 cm a cada salto; apunta la distancia total.', material: 'Cinta métrica y una línea en el suelo' },
+  salto_6m: { corto: '6 m a la pata coja', texto: 'Recorre 6 m a la pata coja lo más rápido que puedas. Aquí menos segundos es mejor.', material: 'Cronómetro y 6 m marcados' },
+  acl_rsi: { corto: 'cuestionario ACL-RSI', texto: 'Pide el cuestionario a tu fisio y apunta la puntuación.', material: 'El cuestionario' },
+  /* Criterios que se marcan a mano pero son una prueba física */
+  'm:escaleras': { titulo: 'Escaleras', corto: 'escaleras', texto: 'Sube y baja un tramo alternando los pies, agarrado a la barandilla.', material: 'Una escalera con barandilla' },
+  'm:sentadilla': { titulo: 'Sentadilla a una pierna', corto: 'sentadilla a una pierna', texto: 'Desde un cajón de 20 cm, 5 repeticiones. Grábate de frente o que alguien te mire.', material: 'Cajón o escalón de 20 cm' },
+  'm:pogos': { titulo: 'Rebotes a una pierna', corto: 'rebotes', texto: 'Saltitos cortos y rápidos a una pierna, en el sitio.', material: 'Nada' },
+  'm:saltar': { titulo: 'Saltos con las dos piernas y con una', corto: 'saltos suaves', texto: 'Unos saltos suaves en el sitio con las dos piernas y luego con una. Mira también cómo está la rodilla al día siguiente.', material: 'Nada' },
+  'm:ocho': { titulo: 'Carrera en ocho', corto: 'carrera en ocho', texto: 'Corre en ocho alrededor de dos conos al 75 % y cambia de dirección.', material: 'Dos conos' },
+};
+const ORDEN_PASOS = ['movilidad', 'derrame', 'perimetros', 'slr', ...RESISTENCIA, 'eq_abiertos', 'eq_cerrados', 'cuad', 'isquios', 'm:escaleras', 'm:sentadilla', 'm:pogos', 'm:saltar', 'm:ocho', ...SALTOS, 'acl_rsi'];
+const PASOS_DE = { ext_max: ['movilidad'], flex_min: ['movilidad'], flex_pct: ['movilidad'], derrame_max: ['derrame'], derrame_estable: ['derrame'], slr_sin_lag: ['slr'], resistencia: RESISTENCIA, equilibrio: ['eq_abiertos', 'eq_cerrados'], lsi_cuad: ['cuad'], lsi_isquios: ['isquios'], lsi_saltos: SALTOS, aclrsi_min: ['acl_rsi'] };
+const PASOS_FUERTES = [...RESISTENCIA, 'cuad', 'isquios', 'm:sentadilla', 'm:pogos', 'm:saltar', 'm:ocho', ...SALTOS];
+function infoPaso(id) {
+  const d = PASOS_PRUEBA[id] || {}, nombre = PRUEBAS[id]?.nombre || id;
+  return { titulo: d.titulo || nombre, corto: d.corto || nombre.toLowerCase(), texto: d.texto || '', material: d.material || '', como: d.como || PRUEBAS[id]?.medir || null };
+}
+function fechaPaso(id) {
+  if (id.startsWith('m:')) return null;
+  if (id === 'movilidad') return ultimo(S.movilidad)?.fecha || null;
+  if (id === 'derrame') return ultimo(S.derrame)?.fecha || null;
+  if (id === 'perimetros') return ultimo(S.perimetros)?.fecha || null;
+  return ultimaPrueba(id)?.fecha || null;
+}
+function faltanLineaBase(todas) {
+  const t = [];
+  if (todas || !S.perfil?.flexSana || !S.movilidad.length) t.push('movilidad');
+  if (todas || !S.derrame.length) t.push('derrame');
+  if (todas || !S.perimetros.length) t.push('perimetros');
+  if (todas || !ultimaPrueba('cuad')) t.push('cuad');
+  for (const x of [...RESISTENCIA, 'eq_abiertos', 'eq_cerrados']) if (todas || !ultimaPrueba(x)) t.push(x);
+  return t;
+}
+const PRIORIDAD_MOTIVO = { falta: 4, no: 3, vieja: 2, repetir: 1, marcar: 1 };
+function pasosPrueba(todas = false, f = faseActual()) {
+  const motivo = {}, crit = {}, h = hoyISO();
+  const poner = (id, m, c) => { if (!motivo[id] || PRIORIDAD_MOTIVO[m] > PRIORIDAD_MOTIVO[motivo[id]]) motivo[id] = m; if (c && !crit[id]) crit[id] = c; };
+  for (const c of criteriosDe(f)) {
+    const r = evaluar(c, f.id);
+    if (r.manual) { if (PASOS_PRUEBA['m:' + c.id] && (todas || r.estado !== 'ok')) poner('m:' + c.id, 'marcar', c); continue; }
+    const ids = c.medida === 'linea_base' ? (r.estado === 'ok' && !todas ? [] : faltanLineaBase(todas)) : c.medida === 'lsi_tipo' ? [c.tipo] : (PASOS_DE[c.medida] || []);
+    for (const id of ids) {
+      const fch = fechaPaso(id);
+      if (!fch) poner(id, 'falta');
+      else if (todas) poner(id, 'repetir');
+      else if (fch >= h) continue;   /* ya hecha hoy */
+      else if (r.estado !== 'ok') poner(id, 'no');
+      else if (diasEntre(fch, h) >= VIGENCIA_PRUEBA) poner(id, 'vieja');
+    }
+  }
+  return ORDEN_PASOS.filter(id => motivo[id]).map(id => ({ id, motivo: motivo[id], criterio: crit[id] || null }));
+}
+function chipMotivo(p) {
+  if (apuntadoHoy(p.id) || (p.criterio && S.manuales[claveManual(faseActual().id, p.criterio.id)] === hoyISO())) return '<span class="chip ok" style="flex:0 0 auto">Hecha hoy</span>';
+  const fch = fechaPaso(p.id);
+  const [cls, t] = { falta: ['falta', 'Falta medirla'], no: ['falta', 'Toca repetirla'], vieja: ['', fch ? `La última, el ${fCorta(fch)}` : 'Toca repetirla'], repetir: ['acento', 'Repetir'], marcar: ['', 'Se marca a mano'] }[p.motivo] || ['', ''];
+  return t ? `<span class="chip${cls ? ' ' + cls : ''}" style="flex:0 0 auto">${esc(t)}</span>` : '';
+}
+function valorPrueba(p) {
+  const d = PRUEBAS[p.tipo] || {};
+  if (d.tipo === 'sino') return p.valor === 'si' ? 'Sin caída' : 'Cae la rodilla';
+  if (d.tipo === 'valor') return `${fmt(p.valor)} ${d.unidad || ''}`.trim();
+  const l = lsiDe(p), u = d.unidad || '';
+  return `Operada ${fmt(p.op, 1)} ${u} · sana ${p.sana ? `${fmt(p.sana, 1)} ${u}` : '—'}${l != null ? ` · ${fmt(l)} %` : ''}`;
+}
+/* Lo que se ha apuntado hoy en ese paso (o null) */
+function apuntadoHoy(id) {
+  const h = hoyISO();
+  if (id.startsWith('m:')) return null;
+  if (id === 'movilidad') { const u = ultimo(S.movilidad.filter(x => x.fecha === h)); return u ? `Extensión ${fmtExt(u.ext)} · flexión ${u.flex != null ? fmt(u.flex) + '°' : '—'}` : null; }
+  if (id === 'derrame') { const u = ultimo(S.derrame.filter(x => x.fecha === h)); return u ? GRADO_TXT[u.grado] || u.grado : null; }
+  if (id === 'perimetros') { const u = ultimo(S.perimetros.filter(x => x.fecha === h)); return u ? `Guardados${u.rodilla?.op ? ` · rodilla ${fmt(u.rodilla.op, 1)} / ${fmt(u.rodilla.sana, 1)} cm` : ''}` : null; }
+  const u = ultimo(S.pruebas.filter(x => x.tipo === id && x.fecha === h));
+  return u ? valorPrueba(u) : null;
+}
+function abrirPaso(id) {
+  if (id === 'movilidad') hojaMovilidad();
+  else if (id === 'derrame') hojaDerrame();
+  else if (id === 'perimetros') hojaPerimetro();
+  else if (PRUEBAS[id]) hojaPrueba(id);
+}
+VISTAS.pruebas = () => {
+  if (!UI.pruebas) UI.pruebas = { pasos: pasosPrueba(false), i: 0 };
+  const dp = UI.pruebas, total = dp.pasos.length, f = faseActual();
+  if (!total) return `<div class="pila"><div class="saludo"><h1>Día de pruebas</h1><p>En esta fase no te falta ninguna prueba: todo está medido y al día.</p></div>
+    <button class="btn ancho" data-accion="hacer-pruebas" data-todas="1">Repetir todas las pruebas</button><button class="btn borde ancho" data-accion="pruebas-fin">Volver</button></div>`;
+  if (dp.i > total) dp.i = total;
+  if (dp.i <= 0) {
+    dp.i = 0;
+    const sem = semaforo(), fuerte = dp.pasos.some(p => PASOS_FUERTES.includes(p.id));
+    const material = [...new Set(dp.pasos.map(p => infoPaso(p.id).material).filter(m => m && m !== 'Nada'))];
+    return `<div class="pila guiada">
+      <div class="saludo"><h1>Día de pruebas</h1><p>${total} ${total === 1 ? 'prueba' : 'pruebas'} de «${esc(f.nombre)}», una a una. La que no puedas hacer hoy, sáltatela.</p></div>
+      ${sem && sem.nivel !== 'verde' && fuerte ? `<div class="card aviso-suave"><h3>Hoy tu semáforo está en ${NIVEL_TXT[sem.nivel]}</h3><p style="margin-top:4px">Deja las pruebas de fuerza, resistencia y salto para un día en verde. Las de movilidad, derrame y equilibrio sí puedes hacerlas.</p></div>` : ''}
+      <div class="card"><div class="lista">${dp.pasos.map((p, i) => `<div class="item"><div class="ej" style="flex:1;align-items:center"><div class="num">${i + 1}</div><div class="cuerpo"><b>${esc(infoPaso(p.id).titulo)}</b></div></div>${chipMotivo(p)}</div>`).join('')}</div></div>
+      ${material.length ? `<div class="card"><h3>Ten a mano</h3><p class="sub" style="margin-top:4px">${esc(material.join(' · '))}</p></div>` : ''}
+      ${fuerte ? '<div class="nota">Calienta 5-10 minutos antes de las pruebas de fuerza, resistencia y salto, y empieza siempre por la pierna sana. Si la rodilla duele o se hincha, para y déjalas para otro día.</div>' : ''}
+      <button class="btn ancho" data-accion="pruebas-sig">Empezar</button>
+    </div>`;
+  }
+  const p = dp.pasos[dp.i - 1], info = infoPaso(p.id), hecho = apuntadoHoy(p.id), manual = p.id.startsWith('m:');
+  const marcado = manual && p.criterio ? S.manuales[claveManual(f.id, p.criterio.id)] : null;
+  const pideSana = p.id === 'movilidad' && !S.perfil.flexSana && criteriosDe(f).some(c => c.medida === 'flex_pct' || c.medida === 'linea_base');
+  const listo = !!(hecho || marcado), ultima = dp.i === total;
+  return `<div class="pila guiada">
+    <div class="cab"><span>Prueba ${dp.i} de ${total}</span><span>Día de pruebas</span></div>
+    <div class="barra"><i style="width:${((dp.i - 1) / total) * 100}%"></i></div>
+    <div class="card pila">
+      <div class="fila entre" style="align-items:flex-start"><h1>${esc(info.titulo)}</h1>${chipMotivo(p)}</div>
+      <p>${esc(info.texto)}</p>
+      ${info.material && info.material !== 'Nada' ? `<p class="sub">Necesitas: ${esc(info.material)}</p>` : ''}
+      ${pideSana ? '<p class="sub">Mide también una vez la flexión de la rodilla sana: está en la misma hoja.</p>' : ''}
+      ${manual && p.criterio ? `<div class="nota"><b>Para darla por buena:</b> ${esc(p.criterio.texto)}</div>` : ''}
+    </div>
+    ${hecho ? `<div class="card bien"><h3>Apuntado hoy</h3><p style="margin-top:4px">${esc(hecho)}</p></div>` : ''}
+    ${manual
+      ? `<div class="rejilla-2"><button class="btn${marcado ? '' : ' claro'}" data-accion="prueba-manual" data-id="${esc(p.criterio?.id || '')}" data-si="1" aria-pressed="${!!marcado}">${marcado ? 'Cumplida' : 'Sí, la cumplo'}</button><button class="btn borde" data-accion="prueba-manual" data-id="${esc(p.criterio?.id || '')}">Todavía no</button></div>`
+      : `<button class="btn ancho${hecho ? ' claro' : ''}" data-accion="prueba-apuntar">${hecho ? 'Apuntar otra vez' : 'Apuntar el resultado'}</button>`}
+    ${como(info.como)}
+    <div class="rejilla-2">
+      <button class="btn borde" data-accion="pruebas-ant">Anterior</button>
+      ${ultima ? '<button class="btn" data-accion="pruebas-fin">Terminar</button>' : `<button class="btn${listo ? '' : ' borde'}" data-accion="pruebas-sig">${listo ? 'Siguiente' : 'Saltar'}</button>`}
+    </div>
+  </div>`;
+};
+
 /* Progreso */
-const SUB_PROG = [['resumen', 'Resumen'], ['movilidad', 'Movilidad'], ['hinchazon', 'Hinchazón y muslo'], ['pruebas', 'Fuerza y saltos'], ['carrera', 'Carrera'], ['habitos', 'Día a día'], ['fotos', 'Fotos']];
+const SUB_PROG =[['resumen', 'Resumen'], ['movilidad', 'Movilidad'], ['hinchazon', 'Hinchazón y muslo'], ['pruebas', 'Fuerza y saltos'], ['carrera', 'Carrera'], ['habitos', 'Día a día'], ['fotos', 'Fotos']];
 VISTAS.progreso = (sub = 'resumen') => {
   if (!SUB_PROG.some(([v]) => v === sub)) sub = 'resumen';
   const seg = `<div class="seg">${SUB_PROG.map(([v, t]) => `<button data-ir="progreso-${v}" class="${sub === v ? 'activo' : ''}">${t}</button>`).join('')}</div>`;
@@ -831,13 +1184,20 @@ PROG.fotos = () => {
       ${sel.length === 1 ? `<button class="btn borde peq" data-accion="borrar-foto" data-id="${sel[0]}" style="align-self:flex-start">Borrar la foto seleccionada</button>` : ''}` : '<div class="card vacio">Aún no hay fotos</div>'}`;
 };
 
+/* Aprender por etapas: primero la etapa en la que estás, luego las que vienen y al final las que ya pasaste. */
+const ETAPAS = [['antes', 'Antes de operar'], ['primeras', 'Primeras semanas'], ['fuerza', 'Fuerza'], ['correr', 'Volver a correr'], ['deporte', 'Vuelta al deporte']];
+const ETAPA_FASE = { p1: 'antes', p2: 'antes', p3: 'antes', prehab: 'antes', f1: 'primeras', f2: 'primeras', c1: 'primeras', f3: 'fuerza', c2: 'fuerza', c3: 'fuerza', f4: 'correr', f5: 'deporte', f6: 'deporte' };
+const etapaDe = f => ETAPA_FASE[f?.id] || 'antes';
 VISTAS.aprender = () => {
-  const grupos = [...new Set(ARTICULOS.map(a => a.grupo))];
-  const f = faseActual();
+  const f = faseActual(), actual = etapaDe(f), i = Math.max(0, ETAPAS.findIndex(([k]) => k === actual));
+  const orden = [...ETAPAS.slice(i), ...ETAPAS.slice(0, i).reverse()];
+  const conocida = a => ETAPAS.some(([k]) => k === a.etapa);
+  const grupos = [...orden.map(([k, t]) => ({ k, t, arts: ARTICULOS.filter(a => a.etapa === k) })), { k: 'app', t: 'Sobre la app', arts: ARTICULOS.filter(a => !conocida(a)) }].filter(g => g.arts.length);
+  const deTuFase = a => (a.fases || []).includes(f.id);
   return `<div class="pila">
     <div class="saludo"><h1>Aprender</h1><p>Entender lo que le pasa a tu rodilla ayuda a no agobiarse y a no pasarse.</p></div>
     <div class="card alerta pulsable" data-ir="alarma"><div class="fila entre"><div><h3>Señales de alarma</h3><p>Cuándo llamar al cirujano o ir a urgencias</p></div><span>›</span></div></div>
-    ${grupos.map(g => `<div class="titulo-seccion"><h2>${esc(g)}</h2></div><div class="card"><div class="lista">${ARTICULOS.filter(a => a.grupo === g).map(a => `<div class="item pulsable" data-ir="articulo-${a.id}" style="cursor:pointer"><div class="cuerpo"><b>${esc(a.titulo)}</b>${(a.fases || []).includes(f.id) ? ' <span class="chip acento">Tu fase</span>' : ''}<div class="sub">${esc(a.resumen || '')}</div></div>${S.leidos[a.id] ? '<span class="chip ok">Leído</span>' : '<span style="color:var(--muted)">›</span>'}</div>`).join('')}</div></div>`).join('')}
+    ${grupos.map(g => `<div class="titulo-seccion"><h2>${esc(g.t)}${g.k === actual ? ' <span class="chip acento" style="vertical-align:3px;margin-left:4px">Tu etapa</span>' : ''}</h2></div><div class="card"><div class="lista">${[...g.arts].sort((a, b) => deTuFase(b) - deTuFase(a)).map(a => `<div class="item pulsable" data-ir="articulo-${a.id}" style="cursor:pointer"><div class="cuerpo"><b>${esc(a.titulo)}</b>${deTuFase(a) ? ' <span class="chip acento">Tu fase</span>' : ''}<div class="sub">${esc(a.resumen || '')}</div></div>${S.leidos[a.id] ? '<span class="chip ok">Leído</span>' : '<span style="color:var(--muted)">›</span>'}</div>`).join('')}</div></div>`).join('')}
     <div class="titulo-seccion"><h2>De dónde sale todo esto</h2></div>
     <div class="card"><p class="sub">Las fases, los criterios y los ejercicios salen de guías clínicas públicas. Los textos están escritos para esta app.</p><ul style="margin:8px 0 0;padding-left:20px">${Object.values(P.fuentes).map(x => `<li style="margin-top:4px">${x.url ? `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.nombre)}</a>` : esc(x.nombre)}</li>`).join('')}</ul></div>
   </div>`;
@@ -1071,8 +1431,40 @@ function hojaEjercicio() {
     <div class="campo"><label for="ej-d">Cómo se hace</label><textarea id="ej-d" placeholder="Lo que te haya explicado"></textarea></div>
   </div><button class="btn ancho" data-accion="guardar-ejercicio">Añadir a mi sesión</button></div>`);
 }
+/* Apuntar una serie (peso, repeticiones o tiempo, esfuerzo) y la nota del ejercicio. n = 0: solo la nota. */
+function hojaSerie(n) {
+  const sa = S.sesionActual; if (!sa) return;
+  const e = listaSesion(sa)[sa.idx]; if (!e) return;
+  const rg = registroDe(sa, e), cant = cantidadDe(e), total = e.series || 1;
+  const campoNota = `<div class="campo"><label for="rs-nota">Nota del ejercicio${cant ? ' (opcional)' : ''}</label><input id="rs-nota" type="text" autocomplete="off" value="${esc(rg.nota || '')}" placeholder="Cómo te ha ido, qué has notado…"></div>`;
+  if (!cant || !n) return abrirHoja(`${cabHoja('Nota')}<div class="pila"><p class="nota-seccion">${esc(e.nombre)}</p><div class="card pila">${campoNota}</div><button class="btn ancho" data-accion="guardar-serie" data-n="0">Guardar la nota</button></div>`);
+  const actual = rg.s?.[n] || null, ult = historialEj(e, 1)[0];
+  const deUlt = ult?.registro.length ? (ult.registro.find(r => r.n === n) || ultimo(ult.registro)) : null;
+  const previa = actual || rg.s?.[n - 1] || deUlt || {};
+  const c = CANTIDAD[cant];
+  const valor = previa[cant] ?? planDe(e) ?? (cant === 'seg' ? 30 : 10);
+  const kg = previa.kg;
+  abrirHoja(`${cabHoja(`Serie ${n} de ${total}`)}<div class="pila">
+    <p class="nota-seccion" style="margin-top:-6px">${esc(e.nombre)}${ult?.registro.length ? ` · la última vez (${fCorta(ult.fecha)}): ${esc(resumenRegistro(ult.registro))}` : ''}</p>
+    <div class="card pila">
+      ${conPeso(e) ? `<div class="campo"><label for="rs-kg">Peso (kg)</label><input id="rs-kg" type="text" inputmode="decimal" autocomplete="off" value="${kg != null ? esc(String(kg).replace('.', ',')) : ''}" placeholder="Vacío o 0 si es sin peso"></div>` : ''}
+      ${paso('rs-c', c.etq, valor, 0, c.max, c.paso)}
+      <div class="campo"><span class="etq">Esfuerzo (opcional)</span><span class="ayuda">${esc(P.rpeTxt || '')}${e.rpe ? ` Orientativo aquí: ${esc(e.rpe)}.` : ''}</span><div class="rpe-op">${opciones('rs-rpe', Array.from({ length: 11 }, (_, i) => [String(i), String(i)]), actual?.rpe ?? null, false, false, true)}</div></div>
+      ${campoNota}
+    </div>
+    <button class="btn ancho" data-accion="guardar-serie" data-n="${n}">Guardar la serie ${n}</button>
+    ${actual ? `<button class="enlace" data-accion="borrar-serie" data-n="${n}" style="align-self:center;color:var(--bad)">Borrar lo apuntado en esta serie</button>` : ''}
+  </div>`);
+}
 function hojaFinSesion() {
-  abrirHoja(`${cabHoja('Sesión terminada')}<div class="pila"><div class="card pila">
+  const sa = S.sesionActual, lista = sa ? listaSesion(sa) : [];
+  const completos = lista.filter(e => (sa.hechas[e.id] || 0) >= (e.series || 1)).length;
+  const apuntes = lista.map(e => {
+    const rg = registroDe(sa, e);
+    return { e, nota: rg.nota || '', regs: Object.entries(rg.s || {}).map(([k, r]) => ({ n: +k, ...r })).sort((a, b) => a.n - b.n) };
+  }).filter(x => x.regs.length || x.nota);
+  const resumen = lista.length ? `<div class="card pila"><p><b>${completos} de ${lista.length}</b> ejercicios con todas las series hechas.</p>${apuntes.length ? `<ul class="resumen-ses">${apuntes.map(x => `<li><b>${esc(x.e.nombre)}</b>: ${esc([resumenRegistro(x.regs), x.nota ? `«${x.nota}»` : ''].filter(Boolean).join(' · '))}</li>`).join('')}</ul>` : ''}</div>` : '';
+  abrirHoja(`${cabHoja('Sesión terminada')}<div class="pila">${resumen}<div class="card pila">
     ${deslizador('fs-d', '¿Cuánto te ha dolido durante la sesión?', 0, 0, 10, 'Nada', 'El peor')}
     <div class="campo"><label for="fs-n">Nota</label><input id="fs-n" type="text" placeholder="Me ha costado el último ejercicio…"></div>
   </div><button class="btn ancho" data-accion="guardar-sesion">Guardar sesión</button></div>`);
@@ -1172,13 +1564,46 @@ ACC['guardar-ejercicio'] = () => {
 };
 ACC['borrar-mio'] = async el => { if (!(await confirmar('¿Borrar este ejercicio?'))) return; S.misEjercicios = S.misEjercicios.filter(e => e.id !== el.dataset.id); guardar(); pintar(true); };
 ACC['empezar-sesion'] = el => {
-  const tipo = el.dataset.tipo;
-  /* Si había una sesión a medias del mismo tipo se sigue (aunque haya pasado la medianoche); se queda con su fecha. */
-  if (!S.sesionActual || S.sesionActual.tipo !== tipo || diasEntre(S.sesionActual.fecha, hoyISO()) > 1) {
-    S.sesionActual = { id: uid(), tipo, fecha: hoyISO(), inicio: Date.now(), faseId: faseActual().id, idx: 0, hechas: {} };
+  const tipo = el.dataset.tipo, extra = el.dataset.extra || null, sa = S.sesionActual;
+  /* Si había una sesión a medias del mismo tipo (y de la misma sesión corta) se sigue, aunque haya pasado la medianoche; se queda con su fecha. */
+  if (!sa || sa.tipo !== tipo || (sa.extra || null) !== extra || diasEntre(sa.fecha, hoyISO()) > 1) {
+    const f = faseActual();
+    S.sesionActual = { id: uid(), tipo, fecha: hoyISO(), inicio: Date.now(), faseId: f.id, idx: 0, hechas: {}, registro: {} };
+    if (extra) S.sesionActual.extra = extra;
+    if (tipo === 'rehab' && (f.calentamiento || []).length) S.sesionActual.conCal = true;
     guardar();
   }
   ir('guiada');
+};
+ACC.lugar = el => { S.ajustes.lugar = el.dataset.v === 'casa' ? 'casa' : 'gimnasio'; guardar(); pintar(true); };
+ACC['ver-tec'] = el => { UI.tec[el.dataset.id] = !UI.tec[el.dataset.id]; pintar(true); };
+ACC['anotar-serie'] = el => hojaSerie(+el.dataset.n || 0);
+ACC['guardar-serie'] = el => {
+  const sa = S.sesionActual; if (!sa) return cerrarHoja();
+  const e = listaSesion(sa)[sa.idx]; if (!e) return cerrarHoja();
+  const n = +el.dataset.n || 0, cant = cantidadDe(e);
+  if (!esObj(sa.registro)) sa.registro = {};
+  const rg = esObj(sa.registro[e.id]) ? sa.registro[e.id] : (sa.registro[e.id] = { s: {} });
+  if (!esObj(rg.s)) rg.s = {};
+  let r = null;
+  if (cant && n >= 1) {
+    const kg = conPeso(e) ? leerNum('rs-kg') : null, v = leerPaso('rs-c'), rpe = leerOpcion('rs-rpe');
+    if (kg != null && (kg < 0 || kg > 500)) return avisar('Revisa el peso');
+    r = {};
+    if (kg != null) r.kg = kg;
+    if (v != null) r[cant] = v;
+    if (rpe != null) r.rpe = +rpe;
+  }
+  const nota = leerTxt('rs-nota');
+  if (nota) rg.nota = nota; else delete rg.nota;
+  if (r) { rg.s[n] = r; sa.hechas[e.id] = Math.max(sa.hechas[e.id] || 0, n); }
+  guardar(); cerrarHoja(); avisar(r ? `Serie ${n} apuntada` : 'Nota guardada'); pintar(true);
+  if (r && sa.hechas[e.id] === (e.series || 1)) navigator.vibrate?.(40);
+};
+ACC['borrar-serie'] = el => {
+  const sa = S.sesionActual, e = sa && listaSesion(sa)[sa.idx]; if (!e) return cerrarHoja();
+  const rg = sa.registro?.[e.id]; if (rg?.s) delete rg.s[+el.dataset.n];
+  guardar(); cerrarHoja(); avisar('Borrado'); pintar(true);
 };
 ACC.serie = el => {
   const sa = S.sesionActual, e = listaSesion(sa)[sa.idx]; const n = +el.dataset.n;
@@ -1193,7 +1618,18 @@ ACC['guardar-sesion'] = () => {
   const sa = S.sesionActual; if (!sa) return cerrarHoja();
   const dolor = leerNum('fs-d');
   const lista = listaSesion(sa);
-  insertar(S.sesiones, { id: sa.id, fecha: sa.fecha, tipo: sa.tipo, faseId: sa.faseId, min: Math.round((Date.now() - sa.inicio) / 60000), ejercicios: lista.map(e => ({ id: e.id, series: sa.hechas[e.id] || 0 })), dolor, nota: leerTxt('fs-n') });
+  /* Por ejercicio: series hechas y, si se apuntó, el registro de cada serie, la nota y si fue la variante de casa */
+  const ejercicios = lista.map(e => {
+    const o = { id: e.id, series: sa.hechas[e.id] || 0 }, rg = registroDe(sa, e);
+    const regs = Object.entries(rg.s || {}).map(([k, r]) => ({ n: +k, ...sanearSerie(r) })).filter(r => r.n >= 1).sort((a, b) => a.n - b.n);
+    if (regs.length) o.registro = regs;
+    if (rg.nota) o.nota = rg.nota;
+    if (e.enCasa) o.lugar = 'casa';
+    return o;
+  });
+  const ses = { id: sa.id, fecha: sa.fecha, tipo: sa.tipo, faseId: sa.faseId, min: Math.round((Date.now() - sa.inicio) / 60000), ejercicios, dolor, nota: leerTxt('fs-n') };
+  if (sa.extra) ses.extra = sa.extra;
+  insertar(S.sesiones, ses);
   S.sesionActual = null; guardar(); cerrarHoja();
   avisar(dolor > limiteDolor() ? 'Guardada. Te ha dolido bastante: la próxima, algo más suave' : 'Sesión guardada. Buen trabajo');
   ir(sa.tipo === 'fuerza' ? 'sesion' : 'hoy');
@@ -1215,13 +1651,39 @@ ACC.avanzar = async el => {
   if (el.dataset.forzar && !(await confirmar(`¿Pasar a «${sig.nombre}» aunque no cumplas todos los criterios?`))) return;
   const ef = estadoFase(f);
   S.evaluaciones.push({ fecha: hoyISO(), de: f.id, a: sig.id, cumplidos: ef.ok, total: ef.total, forzado: !!el.dataset.forzar });
-  S.perfil.faseId = sig.id; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; guardar();
+  S.perfil.faseId = sig.id; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; UI.pruebas = null; guardar();
   avisar(`Ahora estás en ${sig.nombre}`); ir('hoy');
 };
 ACC.retroceder = async () => {
   const r = ruta(), i = r.indexOf(faseActual().id); if (i <= 0) return;
   if (!(await confirmar(`¿Volver a «${P.fases[r[i - 1]].nombre}»?`))) return;
   S.perfil.faseId = r[i - 1]; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; guardar(); ir('hoy');
+};
+/* Día de pruebas */
+ACC['hacer-pruebas'] = el => { UI.pruebas = { pasos: pasosPrueba(!!el.dataset.todas), i: 0 }; ir('pruebas'); };
+const pasoPrueba = () => UI.pruebas && UI.pruebas.i >= 1 ? UI.pruebas.pasos[UI.pruebas.i - 1] : null;
+function moverPrueba(d) {
+  const dp = UI.pruebas; if (!dp) return pintar();
+  const i = Math.max(0, Math.min(dp.pasos.length, dp.i + d));
+  if (i === dp.i) return pintar(true);
+  dp.i = i; NAVEG.scroll[hashActual()] = 0; pintar(false, d > 0 ? 'push' : 'pop');
+}
+ACC['pruebas-sig'] = () => moverPrueba(1);
+ACC['pruebas-ant'] = () => moverPrueba(-1);
+ACC['prueba-apuntar'] = () => { const p = pasoPrueba(); if (p) abrirPaso(p.id); };
+ACC['prueba-manual'] = el => {
+  const id = el.dataset.id; if (!id) return;
+  const k = claveManual(faseActual().id, id);
+  if (el.dataset.si) S.manuales[k] = hoyISO(); else delete S.manuales[k];
+  guardar(); avisar(el.dataset.si ? 'Marcada como cumplida' : 'Apuntado: todavía no');
+  moverPrueba(1);
+};
+ACC['pruebas-fin'] = () => {
+  const dp = UI.pruebas, f = faseActual();
+  const n = dp ? dp.pasos.filter(p => apuntadoHoy(p.id) || (p.criterio && S.manuales[claveManual(f.id, p.criterio.id)] === hoyISO())).length : 0;
+  UI.pruebas = null;
+  if (dp?.pasos.length) avisar(n ? `Pruebas apuntadas hoy: ${n} de ${dp.pasos.length}` : 'Hoy no has apuntado ninguna prueba');
+  volver('evaluar');
 };
 ACC['fase-manual'] = () => { const v = $('#aj-fase').value; if (v === S.perfil.faseId) return; S.perfil.faseId = v; S.perfil.faseDesde = hoyISO(); S.sesionActual = null; guardar(); avisar('Fase cambiada'); };
 ACC['nueva-mov'] = () => hojaMovilidad();
@@ -1372,11 +1834,11 @@ function avisar(t) { const el = $('#aviso'); el.textContent = t; el.classList.ad
    Rutas por # con guion («progreso-movilidad»): el visor de Claude solo admite #nombre sencillo, sin barras.
    NAVEG.pila lleva las pantallas por las que se ha entrado; solo se vuelve con history.back() cuando la anterior
    es de la app (así nunca se sale del visor ni de la app por error). */
-const TITULOS = { hoy: 'Hoy', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', articulo: 'Aprender', ajustes: 'Ajustes', evaluar: 'Avanzar de fase', guiada: 'Sesión', informe: 'Informe', alarma: 'Señales de alarma', bienvenida: 'Rochilla' };
-const NAV = { hoy: 'hoy', evaluar: 'hoy', alarma: 'hoy', sesion: 'sesion', guiada: 'sesion', progreso: 'progreso', informe: 'progreso', aprender: 'aprender', articulo: 'aprender' };
+const TITULOS = { hoy: 'Hoy', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', articulo: 'Aprender', ajustes: 'Ajustes', evaluar: 'Avanzar de fase', guiada: 'Sesión', informe: 'Informe', alarma: 'Señales de alarma', bienvenida: 'Rochilla', pruebas: 'Día de pruebas' };
+const NAV = { hoy: 'hoy', evaluar: 'hoy', alarma: 'hoy', sesion: 'sesion', guiada: 'sesion', progreso: 'progreso', informe: 'progreso', aprender: 'aprender', articulo: 'aprender', pruebas: 'hoy' };
 const RAIZ = ['hoy', 'sesion', 'progreso', 'aprender'];
-const PADRE = { evaluar: 'hoy', alarma: 'hoy', ajustes: 'hoy', guiada: 'sesion', articulo: 'aprender', informe: 'progreso', bienvenida: 'ajustes' };
-const ETQ_VOLVER = { hoy: 'Hoy', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', ajustes: 'Ajustes', evaluar: 'Fase', alarma: 'Alarmas', informe: 'Informe', articulo: 'Artículo', bienvenida: 'Perfil', guiada: 'Sesión' };
+const PADRE = { evaluar: 'hoy', alarma: 'hoy', ajustes: 'hoy', guiada: 'sesion', articulo: 'aprender', informe: 'progreso', bienvenida: 'ajustes', pruebas: 'evaluar' };
+const ETQ_VOLVER = { hoy: 'Hoy', sesion: 'Sesión', progreso: 'Progreso', aprender: 'Aprender', ajustes: 'Ajustes', evaluar: 'Fase', alarma: 'Alarmas', informe: 'Informe', articulo: 'Artículo', bienvenida: 'Perfil', guiada: 'Sesión', pruebas: 'Pruebas' };
 const rutaDe = h => { const g = String(h).indexOf('-'); return g < 0 ? String(h) : String(h).slice(0, g); };
 const hashActual = () => decodeURIComponent(location.hash.replace(/^#/, '')) || 'hoy';
 const NAVEG = { pila: [hashActual()], modo: null, actual: null, scroll: {}, atrasT: null };
@@ -1461,7 +1923,7 @@ function pintar(mantenerScroll = false, dir = null) {
   main.innerHTML = `<div class="pantalla">${VISTAS[r](sub)}</div>`;
   UI.ruta = r;
   pintarCabecera(r);
-  document.body.classList.toggle('nav-oculta', r === 'guiada' || !S.perfil);
+  document.body.classList.toggle('nav-oculta', r === 'guiada' || r === 'pruebas' || !S.perfil);
   $$('#nav button').forEach(b => { const si = b.dataset.ir === NAV[r]; b.classList.toggle('activo', si); if (si) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
   main.scrollTop = mantenerScroll ? y : (dir === 'pop' || dir === 'tab') ? (NAVEG.scroll[h] || 0) : 0;
   NAVEG.actual = h; NAVEG.scroll[h] = main.scrollTop;
@@ -1506,7 +1968,9 @@ document.addEventListener('click', async e => {
   const op = e.target.closest('.opciones button');
   if (op) {
     const g = op.parentElement;
-    if (g.dataset.multi) op.classList.toggle('activo'); else $$('button', g).forEach(b => b.classList.toggle('activo', b === op));
+    if (g.dataset.multi) op.classList.toggle('activo');
+    else if (g.dataset.opcional && op.classList.contains('activo')) op.classList.remove('activo');
+    else $$('button', g).forEach(b => b.classList.toggle('activo', b === op));
     if (g.closest('#vista')) actualizarFormPerfil();
     return;
   }

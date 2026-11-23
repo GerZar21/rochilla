@@ -13,12 +13,18 @@ No sustituye al cirujano ni al fisio: si dicen algo distinto, manda lo que digan
   Cada etapa tiene objetivos, ejercicios, lo que conviene evitar y los criterios para avanzar, que la app comprueba sola con tus medidas.
 - **Menisco roto o posible**: límites prudentes (nada de flexión profunda con peso, giros con el pie apoyado ni forzar contra un tope), una regla del dolor más estricta (3/10) y avisos de bloqueo, enganche y fallos.
 - **Chequeo diario** de 30 segundos: dolor, hinchazón, marcha, si la rodilla se ha ido, enganchado o bloqueado, confianza, función, sueño, agua y pasos. Avisa si hoy estás peor que ayer o si algo es una señal de alarma. Se pueden corregir los chequeos de otros días.
-- **Sesión guiada**: ejercicio a ejercicio, con series, cronómetro con pitido y enlace a vídeos. Puedes quitar ejercicios y añadir los de tu fisio. También hay sesión del resto del cuerpo.
+- **Semáforo de carga del día**: sale del chequeo (dolor, hinchazón, fallos, enganches, bloqueos y sueño) con reglas fijas y sin porcentajes: verde, sesión normal; ámbar, sesión suave con la carga anterior; rojo, descanso o solo movilidad y frío. Con el menisco tocado usa el tope de 3/10.
+- **Sesión guiada**: ejercicio a ejercicio, con series, cronómetro con pitido y enlace a vídeos. Puedes quitar ejercicios y añadir los de tu fisio.
+  - Cada ejercicio trae 2-3 puntos de técnica y, en los de fuerza, un esfuerzo orientativo (RPE). Son pautas generales, no criterios clínicos.
+  - En cada serie se puede apuntar, si se quiere, peso, repeticiones y esfuerzo, y una nota por ejercicio. La ficha enseña la última vez y el peso máximo.
+  - Desde la fase de fuerza y control: calentamiento corto y opción «En casa / En el gimnasio» con variantes sin máquinas.
+  - Resto del cuerpo: el programa de siempre y 5 sesiones cortas (movilidad, tronco, tren superior, cardio sin impacto y equilibrio).
+- **Día de pruebas**: desde «¿Puedo avanzar?», recorre una a una las medidas de la fase que faltan o tocan, con instrucciones y lo que hace falta.
 - **Progreso**:
   - Movilidad: puedes anotar quién la ha medido, y la extensión completa antes de operar tiene que confirmarla el fisio.
   - Derrame, perímetros, fuerza, saltos y simetría (LSI), resistencia, equilibrio, carrera, día a día y fotos comparables.
   - Gráficos, logros, racha y resumen semanal.
-- **Aprender**: 14 artículos cortos escritos para la app, uno de ellos sobre «Mientras esperas la operación». También las señales de alarma.
+- **Aprender**: 14 artículos cortos escritos para la app, agrupados por etapa (la tuya primero), uno de ellos sobre «Mientras esperas la operación». También las señales de alarma.
 - **Informe para el fisio**: se puede imprimir o guardar en PDF.
 - **Copia de seguridad** (archivo `rochilla-AAAA-MM-DD.json`; las copias antiguas `mi-rodilla-*.json` se siguen pudiendo recuperar) y recordatorio diario en el calendario.
 - **Se maneja como una app**: la cabecera y la barra de pestañas no se mueven al bajar (tampoco con el rebote del iPhone), las subpantallas tienen «Volver» arriba, el título grande se encoge en la cabecera al bajar, las hojas se cierran arrastrándolas hacia abajo y cada botón responde al tocarlo sin repetirse con un doble toque. Las lecciones salen de Bloom OS: `investigacion/lecciones-bloom.md`.
